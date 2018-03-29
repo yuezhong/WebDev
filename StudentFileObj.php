@@ -99,7 +99,7 @@ class StudentFileObj
 	
 	public function setSubFolder($subfolder)
 	{
-		$this->subfolder = $name;
+		$this->subfolder = $subfolder;
 	}
 
 	public function getSubFolder()
