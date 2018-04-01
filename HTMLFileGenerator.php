@@ -1,5 +1,5 @@
 <?php
-abstract class HTMLFileGenerator
+class HTMLFileGenerator
 {
 	private $file;
 	private $filename;

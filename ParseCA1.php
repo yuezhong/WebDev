@@ -77,11 +77,11 @@ class ParseCA1
 		if(($heading_mark == 1) && ($maillink_mark == 1))
 		{
 			$this->ca1Marks += 0.25;
-			$this->ca1Comments .= ";Multiple headings, email link and external link present";
+			$this->ca1Comments .= ";Multiple headings plus email link and external link to infotech server present";
 		}
 		else
 		{
-			$this->ca1Comments .= ";Need to have multiple headings, email link and external link to any website";
+			$this->ca1Comments .= ";Need to have multiple headings plus email link and link to infotech server.";
 		}
 	} // End getHeadingEmailLinkMark
 
@@ -151,12 +151,13 @@ class ParseCA1
 	  }
 	 }
 
-	 // External Link - to any site
+	 // External Link - to infotech server
 	 foreach($links as $link)
 	 {
 	  if($link->hasAttribute('target'))
 	  {
-		if(($link->getAttribute('target') === '_blank'))
+		if(($link->getAttribute('target') === '_blank') &&
+		($link->getAttribute('href') === "http://infotech.scu.edu.au/~" . $studentUsername))
 		{
 		  $ex_mark++;
 		}

@@ -44,9 +44,9 @@ class checkAssignment
 	{
 	 try{
 		$dir = new RecursiveIteratorIterator(
-				new RecursiveDirectoryIterator(
-				$this->dirRoot, 
-				FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS));
+		new RecursiveDirectoryIterator(
+		$this->dirRoot, 
+		FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS));
 		
 		switch ($filetypes)
 		{
@@ -78,16 +78,19 @@ class checkAssignment
 			}
 			
 			// Using file path as index, while removing the ./ at the start
-			$index = substr($dir->key(),2);
+			// $index = substr($dir->key(),2);
+			$index = $dir->key();
 			$FileObj[$index] = new StudentFileObj($path[0], $filename, $filetype, $subfolder);
 			$FileObj[$index]->setFileSize($dir->getSize());
 			$FileObj[$index]->setFilePath($dir->key());
 			
 			if($filetypes === "images")
 			{
-				$imageProps = getimagesize($dir->key());
+				$imageProps = getimagesize($index);
 				$FileObj[$index]->setImageWidth($imageProps[0]);
 				$FileObj[$index]->setImageHeight($imageProps[1]);
+				$mime = explode("/", $imageProps["mime"]);
+				$FileObj[$index]->setMimeType($mime[1]);
 			}
 		}
 		
@@ -99,26 +102,55 @@ class checkAssignment
 	 }
 	} // End Recurse Directories
 	
+	// Start Assesessment checks
+	public function checkAssessment($username, $StudentFiles, $smarks, $ca, $student)
+	{
+		// Find CA file e.g: studentName _CA1.html
+		$cafile = $username . "_" . $ca .".html";	
+		$parseObj = "Parse" . $ca;
+		
+
+		if($ca === "CA3")
+		{
+			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/index.html"; 
+		}
+		else
+		{
+			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/" . $cafile;
+		}
+			
+		if(($StudentFiles["html"][$index] !== "") || ($StudentFiles["css"][$index] !== ""))
+		{
+			
+			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_ISY10209_Ass1/");	
+			$pca->start($index, $username, $StudentFiles);
+			$smarks->setMarks($pca->getMarks());
+			$smarks->setComments($pca->getComments());
+			$student->addRtotal($pca->getMarks());
+		}
+		else{
+			$smarks->setMarks(0);
+			$smarks->setComments("No $ca File found.");
+		}
+
+	} // End CheckAssessment
+	
 	// Start Assignment 1 checks
 	public function startAssignment1($students, $StudentFiles)
 	{
 		
 		foreach($students as $username=>$student)
 		{
-			$htmlOut = new OutputResults($student_arr[$username], "1");
-			$smarks = new StudentMarksObj("1", $student_arr[$username]->getStudentId());
+			$htmlOut = new OutputResults($students[$username], "1");
+			$smarks = new StudentMarksObj("1", $students[$username]->getStudentId());
 
-            $smarks = checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
+            $this->checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), $smarks->getCA());
 			
 			$htmlOut->closeHTML($student->getRtotal());
 		}
 	}
 	
-	public function checkAssessment($username, $StudentFiles, $smarks, $ca, $student)
-	{
-		// CA file 
-	}
 	
 } // End Class
 
@@ -133,7 +165,7 @@ if ($argc != '3')
 } 
 else 
 {
-	$directoryRoot = $argv[1];
+	$directoryRoot = rtrim($argv[1], "/");
 	$assignment = $argv[2];
 	
 	$chAss = new checkAssignment($directoryRoot, $assignment);

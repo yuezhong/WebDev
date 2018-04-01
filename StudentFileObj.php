@@ -10,6 +10,7 @@ class StudentFileObj
 	private $height;
 	private	$width;
 	private $subfolder;
+	private $mime;
 
 	public function __construct($username, $filename, $type, $subfolder)
 	{
@@ -105,6 +106,16 @@ class StudentFileObj
 	public function getSubFolder()
 	{
 		return $this->subfolder;
+	}
+	
+	public function setMimeType($mime)
+	{
+		$this->mime = $mime;
+	}
+
+	public function getMimeType()
+	{
+		return $this->mime;
 	}
 
 

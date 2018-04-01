@@ -91,17 +91,15 @@ class ParseCA2
 			}
 		}
 
-		// Get 1 mark if 2 of the 3 others are found.
-		if((($alignment_type['right'] > 0) && ($alignment_type['center'] > 0)) ||
-		   (($alignment_type['right'] > 0) && ($alignment_type['justify'] > 0)) ||
-		   (($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
+		// Only get a mark if all 3 types are found. Left is ignored as that's the default one.
+		if(($alignment_type['right'] > 0) && ($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
 		{
 			$this->ca2Marks += 0.25;
-			$this->ca2Comments .= "Required paragraph alignments found: Good";
+			$this->ca2Comments .= "All paragraph alignment found: Good";
 		}
 		else
 		{
-			$this->ca2Comments .= "Need to use at least 3 types of alignment: Left, Right, Center and Justify";
+			$this->ca2Comments .= "Need to use all 4 types of alignment: Left Right Center and Justify";
 		}
 	} // End getPalignment
 	
@@ -423,7 +421,7 @@ class ParseCA2
 		 {
 			 $this->ca2Comments .= ";Need to use at least 2 of the following: bold, italics, mark, strong, sub, sup";
 		 }		
-	} // End font
+	}
 	
 	
 	
