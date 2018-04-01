@@ -19,11 +19,13 @@ class StudentFileObj
 		$this->type = $type;
 		if(strpos($username, "_"))
 		{
-			$this->username = substr($username, 0, (strpos($username, "_") - 1));
+		 $uname = explode("_", $username);
+		 $this->username = $uname[0];
+
 		}
 		else
 		{
-			$this->username = $username;
+		 $this->username = $username;
 		} 
 		$this->subfolder = $subfolder;
 	}
