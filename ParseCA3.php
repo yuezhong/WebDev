@@ -51,6 +51,7 @@ class ParseCA3
 	 $this->getImageLinks($dom, $StudentFileObj);
 	 $this->checkImageProp($dom, $StudentFileObj);
 	 $this->checkMime($dom, $StudentFileObj);
+	 $this->checkBgImages($studentUsername, $StudentFileObj)
 	 	 
 	}
 	
@@ -112,7 +113,7 @@ class ParseCA3
 		 if(strlen($image->getAttribute('alt')) >= 3)
 		 {
 			$altTag++;
-			echo  "Alt: ". $image->getAttribute('alt'). "$altTag\n";
+			// echo  "Alt: ". $image->getAttribute('alt'). "$altTag\n";
 		 }
 	 }
 	 
@@ -293,11 +294,34 @@ class ParseCA3
 	} // End checkMime
 	
 	// Check Background images in html
-	public function checkHTMLBKG($dom, $StudentFileObj)
+	public function checkBgImages($studentUsername, $StudentFileObj)
 	{
-		$backImage = $dom->getElementsByTagName('url');
+		$urls = array();
+		$url_regex = '/url\(([\s])?([\"|\'])?(.*?)([\"|\'])?([\s])?\)/i';
+
+		foreach($StudentFileObj["css"] as $cssfile)
+		{
+			if($cssfile->getusername() === $studentUsername)
+			{
+			 $text = file_get_contents($cssfile->getFilepath());
+			 preg_match_all($url_regex, $text, $urls);
+			}
+		}
 		
-	} // End checkHTMLBKG
+		foreach($StudentFileObj["html"] as $htmlfile)
+		{
+			if($htmlfile->getusername() === $studentUsername)
+			{
+			 $text = file_get_contents($htmlfile->getFilepath());
+			 preg_match_all($url_regex, $text, $urls);
+			}
+		}
+	print_r($urls);
+
+	} // End checkBgImages
+
+	
+	
 	
 }
  
