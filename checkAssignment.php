@@ -102,6 +102,18 @@ class checkAssignment
 	 }
 	} // End Recurse Directories
 	
+	// Validate files
+	public function validateFiles($StudentFiles)
+	{
+		
+		foreach($StudentFiles["html"] as $htmlfiles)
+		{
+			$validatedHtml = exec("java -Xss512k -jar ./vnu.jar --errors-only " . $htmlfiles->getFilepath());
+		}
+		echo $validatedHtml . "\n";
+		
+	} // End validateFiles
+	
 	// Start Assesessment checks
 	public function checkAssessment($username, $StudentFiles, $smarks, $ca, $student)
 	{
