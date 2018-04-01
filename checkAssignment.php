@@ -144,10 +144,17 @@ class checkAssignment
 			$htmlOut = new OutputResults($students[$username], "1");
 			$smarks = new StudentMarksObj("1", $students[$username]->getStudentId());
 
-            $this->checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
-			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), $smarks->getCA());
-			
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "1");
+
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA2", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "2");
+
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3");
+
 			$htmlOut->closeHTML($student->getRtotal());
+
 		}
 	}
 	

@@ -53,6 +53,8 @@ class ParseCA2
 	 $this->checkBulletsUL($dom);
 	 $this->checkBulletsOL($dom);
 	 $this->checkFontStyles($dom);
+	 $this->searchForAttribute($dom, "class");
+	 $this->searchForAttribute($dom, "id");
 	} // End start
 	
 	
@@ -202,14 +204,15 @@ class ParseCA2
 			$total = $total + $value;
 		}
 		
-		// Need a min of 3
-		if($total > 3)
+		// Need a min of 1
+		if($total >= 1)
 		{
 			$this->ca2Marks += 0.25;
+			$this->ca2Comments .= ";Minimum 1 of " . $attribute . " attributes found: Good.";
 		}
 		else
 		{
-			$this->ca2Comments .= ";Need a minimum of 3 of " . $attribute . " attributes.";
+			$this->ca2Comments .= ";No " . $attribute . " attributes found.";
 		}
 		
 	} // End searchForAttribute

@@ -8,6 +8,7 @@ class StudentMarksObj
         private $studentId;
         private $maxmarks;
 
+		// May not need $assessment since we're just creating and overwriting...
         public function __construct($assessment, $id)
         {
                $this->assessment = $assessment;

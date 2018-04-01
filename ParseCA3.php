@@ -321,7 +321,11 @@ class ParseCA3
 	} // End checkBgImages
 
 	
-	
+	// Find Navbar and make sure links works
+	public function findNavbar($dom, $StudentFileObj)
+	{
+		
+	}
 	
 }
  
