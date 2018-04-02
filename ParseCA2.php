@@ -1,5 +1,4 @@
 <?php
-
 /* CA2 Requirements:
  * - <p> alignment
  * - css levels, inline, embed, external
@@ -34,7 +33,7 @@ class ParseCA2
 	 return $this->ca2Comments;
 	}
 
-	public function start($file)
+	public function start($file, $username, $StudentFiles)
 	{
 	 //Load the HTML page
 	 $html = file_get_contents($file);
@@ -47,6 +46,7 @@ class ParseCA2
 
 	 
 	 $this->getPalignment($dom);
+	 $this->validateHTMLFile($dom, $file);
 	 $this->getDiv($dom);
 	 $this->getSpan($dom);
 	 $this->getCssStyle($dom);
@@ -55,11 +55,13 @@ class ParseCA2
 	 $this->checkFontStyles($dom);
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
+	 $this->checkCssAttrib($file, $username, $StudentFiles);
+
 	} // End start
 	
 	
 	// Get Paragraph Alignment.
-	// Only get full marks (0.25) if all are present
+	// Only get full marks (0.3) if all are present
 	public function getPalignment($dom)
 	{
 		$paragraphs = $dom->getElementsByTagName('p');
@@ -96,7 +98,7 @@ class ParseCA2
 		// Only get a mark if all 3 types are found. Left is ignored as that's the default one.
 		if(($alignment_type['right'] > 0) && ($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
 		{
-			$this->ca2Marks += 0.25;
+			$this->ca2Marks += 0.3;
 			$this->ca2Comments .= "All paragraph alignment found: Good";
 		}
 		else
@@ -121,7 +123,7 @@ class ParseCA2
 		
          if($div_mark > 0)
          {
-			$this->ca2Marks += 0.25;
+			$this->ca2Marks += 0.15;
 			$this->ca2Comments .= ";Div used: Good";
          }
 		 else
@@ -147,7 +149,7 @@ class ParseCA2
 		
          if($span_mark > 0)
          {
-			$this->ca2Marks += 0.25;
+			$this->ca2Marks += 0.15;
 			$this->ca2Comments .= ";Span tag used: Good";
          }
 		 else
@@ -207,7 +209,7 @@ class ParseCA2
 		// Need a min of 1
 		if($total >= 1)
 		{
-			$this->ca2Marks += 0.25;
+			$this->ca2Marks += 0.3;
 			$this->ca2Comments .= ";Minimum 1 of " . $attribute . " attributes found: Good.";
 		}
 		else
@@ -295,7 +297,7 @@ class ParseCA2
 
 	if(($mark_in > 0) && ($mark_em > 0) && ($mark_ex > 0))
 	{
-		$this->ca2Marks += 0.25;
+		$this->ca2Marks += 0.3;
 		$this->ca2Comments .= ";All levels of CSS present: Good";
 	}
 	else
@@ -332,7 +334,7 @@ class ParseCA2
 	 
 	 if($uBullets > 0)
 	 {
-		 $this->ca2Marks += 0.25;
+		 $this->ca2Marks += 0.3;
 		 $this->ca2Comments.= "; Square UL bullets: Good";
 	 }
 	 else
@@ -370,12 +372,12 @@ class ParseCA2
 	 
 	 if($oBullets > 0)
 	 {
-		 $this->ca2Marks += 0.25;
+		 $this->ca2Marks += 0.3;
 		 $this->ca2Comments .= ";OL bullet type changed to lower-roman: Good";
 	 }
 	 else
 	 {
-		 $this->ca2Comments .= ";No change to OL bullet type";
+		 $this->ca2Comments .= ";Need to change OL bullets to lower-roman.";
 	 }
 	} // End checkBulletsOL
 	
@@ -417,16 +419,88 @@ class ParseCA2
 		 
 		 if($total >= 2)
 		 {
-			$this->ca2Marks += 0.25;
+			$this->ca2Marks += 0.3;
 			$this->ca2Comments .= ";At least 2 font-weight, styles, size used: Good";
 		 }
 		 else
 		 {
 			 $this->ca2Comments .= ";Need to use at least 2 of the following: bold, italics, mark, strong, sub, sup";
 		 }		
-	}
+	} // End checkFontStyles
 	
+	// Validate HTML
+	public function validateHTMLFile($dom, $file)
+	{
+		libxml_use_internal_errors(true);
+		$dom->load($file);
+		if($dom->validate())
+		{
+				$this->ca2Marks += 0.3;
+				$this->ca2Comments .= ";HTML validates, no errors.";
+		}
+		else
+		{
+				$this->ca2Comments .= ";HTML doesn't validate.";
+		}
+
+		// Clear errors after we're done. We don't need to store this info.
+		libxml_clear_errors();
+	} // End validateHTMLFile
 	
+	// Find text and background colours
+	public function checkCssAttrib($file, $username, $StudentFiles)
+	{
+		// Look for styles_CA2.css file
+		foreach($StudentFiles["css"] as $sfcss)
+		{
+			if(($sfcss->getFilename() === "styles_CA2.css") &&
+			($sfcss->getusername() === $username))
+			{
+				$filepath = $sfcss->getFilepath();
+			}
+		}
+
+		// Get Text Colours
+		$cssfile = file_get_contents($filepath);
+		// Search for pattern, starting with color: and ending with ;
+		// preg_replace removes whitespaces
+		preg_match_all("/(?<=color:).*?(?=;)/", $cssfile, $matches);
+		$textcolours = preg_replace('/\s+/', '', $matches[0]);
+
+		$htmlfile = file_get_contents($file);
+		preg_match_all("/(?<=color:).*?(?=;)/", $htmlfile, $matches);	
+		$textcolours = array_merge($textcolours, preg_replace('/\s+/', '', $matches[0]));
+		
+		$results_colors = array_unique($textcolours);
+		
+		// Get Background Colours
+		preg_match_all("/(?<=background-color:).*?(?=;)/", $cssfile, $matches);
+		$bgcolours = preg_replace('/\s+/', '', $matches[0]);
+		
+		preg_match_all("/(?<=background-color:).*?(?=;)/", $htmlfile, $matches);
+		$bgcolours = array_merge($bgcolours, preg_replace('/\s+/', '', $matches[0]));
+		
+		$results_bgcolours = array_unique($bgcolours);
+		
+		if((count($results_bgcolours) >= 2) && (count($results_colors) >= 2))
+		{
+			$this->ca2Marks += 0.3;
+			$this->ca2Comments .= ";2 or more text and background colours used: Good.";
+		}
+		elseif((count($results_bgcolours) >= 2) && (count($results_colors) < 2) ||
+		(count($results_bgcolours) < 2) && (count($results_colors) >= 2))
+		{
+			$this->ca2Marks += 0.15;
+			$this->ca2Comments .= ";Need 2 or more text and background colours. 
+			Found:" . count($results_bgcolours) ." Background colours, " . count($results_colors)
+			. " colours.";
+		}
+		else
+		{
+			$this->ca2Comments .= ";Need at least 2 or more of text colours and background colours.";
+		}
+		
+	} // End checkCssAttrib
 	
 }
 
