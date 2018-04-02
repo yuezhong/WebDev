@@ -33,17 +33,23 @@ class OutputResults
 			font-family: Verdana, Arial, Helvetica, sans-serif;
 			color: #4f6b72;
 			background: #E6EAE9;}
+		
+		#container {
+			margin-left:	auto;
+			margin-right:	auto;
+			width:	1280px;
+		}
 
 		table {
 			border:	2px;
 			padding: 0;
 			margin: 0;
-			width:	900px;}
+			width:	1024px;}
 			
 		th {
 			font-family: Verdana, Arial, Helvetica, sans-serif;
 			padding: 5px 5px 5px 10px;
-			background: #CAE8EA;}
+			background-color: #CAE8EA;}
 			
 		tr:nth-of-type(even) {
 			background: #F5FAFA;
@@ -51,13 +57,13 @@ class OutputResults
 			
 		.headings {
 			font-weight:	bold;
-			background: 	#CAE8EA;
+			background-color: 	#CAE8EA;
 		}
 		');
 		
 		$this->htmlOutput->append('</STYLE>');
 		$this->htmlOutput->append('</HEAD>');
-		$this->htmlOutput->append('<BODY>');
+		$this->htmlOutput->append('<BODY><DIV id="container">');
 		$this->htmlOutput->append('<TABLE><THEAD>');
 		$this->htmlOutput->append("<TR><TH>Student:</TH><TH>" . $studentName . "</TH>");
 		$this->htmlOutput->append("<TH>". $student->getStudentId() ."</TH>". "<TH>ISY10209 - Assignment $assignment </TH></TR>");
@@ -82,7 +88,7 @@ class OutputResults
 		$this->htmlOutput->append('<TR CLASS="headings">');
 		$this->htmlOutput->append("<TD>Total</TD><TD>$this->maxTotal</TD><TD>$total</TD><TD></TD></TR>");
 		$this->htmlOutput->append("</TBODY></TABLE>");
-		$this->htmlOutput->append("</BODY>");
+		$this->htmlOutput->append("</DIV></BODY>");
 		$this->htmlOutput->append("</HTML>");
 	}
 	

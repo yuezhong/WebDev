@@ -46,7 +46,7 @@ class ParseCA2
 
 	 
 	 $this->getPalignment($dom);
-	 $this->validateHTMLFile($dom, $file);
+	 $this->validateFiles($dom, $file, $username, $StudentFiles);
 	 $this->getDiv($dom);
 	 $this->getSpan($dom);
 	 $this->getCssStyle($dom);
@@ -429,23 +429,44 @@ class ParseCA2
 	} // End checkFontStyles
 	
 	// Validate HTML
-	public function validateHTMLFile($dom, $file)
+	public function validateFiles($dom, $file, $username, $StudentFiles)
 	{
 		libxml_use_internal_errors(true);
 		$dom->load($file);
-		if($dom->validate())
+		
+		// Look for styles_CA2.css file
+		foreach($StudentFiles["css"] as $sfcss)
 		{
-				$this->ca2Marks += 0.3;
-				$this->ca2Comments .= ";HTML validates, no errors.";
+			if(($sfcss->getFilename() === "styles_CA2.css") &&
+			($sfcss->getusername() === $username))
+			{
+				$filepath = $sfcss->getFilepath();
+			}
 		}
+		
+		if($dom->validate() && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
+		{
+			$this->ca2Marks += 0.3;
+			$this->ca2Comments .= ";HTML and CSS validates, no errors.";
+		}
+		elseif(($dom->validate() === TRUE) && ($StudentFiles["css"][$filepath]->getValidation() === "n"))
+		{
+			$this->ca2Marks += 0.15;
+			$this->ca2Comments .= ";HTML validates but CSS contain errors.";
+		}		
+		elseif(($dom->validate() === FALSE) && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
+		{
+			$this->ca2Marks += 0.15;
+			$this->ca2Comments .= ";HTML does not validates but CSS validates.";
+		}		
 		else
 		{
-				$this->ca2Comments .= ";HTML doesn't validate.";
+			$this->ca2Comments .= ";HTML doesn't validate.";
 		}
 
 		// Clear errors after we're done. We don't need to store this info.
 		libxml_clear_errors();
-	} // End validateHTMLFile
+	} // End validateFiles
 	
 	// Find text and background colours
 	public function checkCssAttrib($file, $username, $StudentFiles)

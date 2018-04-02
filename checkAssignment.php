@@ -105,12 +105,21 @@ class checkAssignment
 	// Validate files
 	public function validateFiles($StudentFiles)
 	{
-		
-		foreach($StudentFiles["html"] as $htmlfiles)
+		// Calling external validator
+		exec("java -Xss512k -jar ./vnu.jar --css --errors-only " . 
+		$cssfiles->getFilepath() . " 2>&1", $output, $validatedCss);
+		if($validatedCss > 0)
 		{
-			$validatedHtml = exec("java -Xss512k -jar ./vnu.jar --errors-only " . $htmlfiles->getFilepath());
+			// Any errors found, set validation to N
+			$cssfiles->setValidation("n");
 		}
-		echo $validatedHtml . "\n";
+		else
+		{
+			// No errors, set validation to y
+			$cssfiles->setValidation("y");
+		}
+	}
+
 		
 	} // End validateFiles
 	
@@ -132,8 +141,7 @@ class checkAssignment
 		}
 			
 		if(($StudentFiles["html"][$index] !== "") || ($StudentFiles["css"][$index] !== ""))
-		{
-			
+		{		
 			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_ISY10209_Ass1/");	
 			$pca->start($index, $username, $StudentFiles);
 			$smarks->setMarks($pca->getMarks());
@@ -144,6 +152,7 @@ class checkAssignment
 			$smarks->setMarks(0);
 			$smarks->setComments("No $ca File found.");
 		}
+		return $smarks;
 
 	} // End CheckAssessment
 	
@@ -197,11 +206,12 @@ else
 	$StudentFiles["css"] = $chAss->recurseDir("css");
 	$StudentFiles["images"] = $chAss->recurseDir("images");
 
+	$chAss->validateFiles($StudentFiles);
 
 	switch($assignment)
 	{
 		case 1:
-			$chAss->startAssignment1($students, $StudentFiles);
+			//$chAss->startAssignment1($students, $StudentFiles);
 			break;
 		case 2:
 			//$chAss->startAssignment2();

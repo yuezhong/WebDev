@@ -51,7 +51,8 @@ class ParseCA3
 	 $this->getImageLinks($dom, $StudentFileObj);
 	 $this->checkImageProp($dom, $StudentFileObj);
 	 $this->checkMime($dom, $StudentFileObj);
-	 $this->checkBgImages($studentUsername, $StudentFileObj)
+	 $this->validateFiles($studentUsername, $StudentFileObj);
+	 //$this->checkBgImages($studentUsername, $StudentFileObj)
 	 	 
 	}
 	
@@ -327,6 +328,66 @@ class ParseCA3
 		
 	}
 	
+	// Validate HTML
+	public function validateFiles($username, $StudentFiles)
+	{
+		$non_validatedCss = 0;
+		$non_validatedHtml = 0;
+		
+		// Turn of errors to the screen
+		libxml_use_internal_errors(true);
+
+		// Loop through all css files
+		foreach($StudentFiles["css"] as $sfcss)
+		{
+			if(($sfcss->getusername() === $username))
+			{
+				$filepath = $sfcss->getFilepath();
+				if($StudentFiles["css"][$filepath]->getValidation() === "n")
+				{
+					$non_validatedCss++;
+				}
+			}
+		}
+		
+		// Loop through all html files
+		foreach($StudentFiles["html"] as $sfhtml)
+		{			
+			if(($sfhtml->getusername() === $username))
+			{
+				$dom = new DOMDocument;
+				$dom->load($sfhtml->getFilepath());
+				
+				if(!($dom->validate()))
+				{
+					$non_validatedHtml++;
+				}
+			}	
+		}
+		
+		if($non_validatedCss = 0 && $non_validatedHtml = 0)
+		{
+			$this->ca3Marks += 0.4;
+			$this->ca3Comments .= ";HTML and CSS validates, no errors.";
+		}
+		elseif($non_validatedCss > 0 && $non_validatedHtml = 0)
+		{
+			$this->ca3Marks += 0.2;
+			$this->ca3Comments .= ";HTML validates but CSS contain errors.";
+		}		
+		elseif($non_validatedCss = 0 && $non_validatedHtml > 0)
+		{
+			$this->ca3Marks += 0.2;
+			$this->ca3Comments .= ";HTML does not validates but CSS validates.";
+		}		
+		else
+		{
+			$this->ca3Comments .= ";HTML and CSS files doesn't validate.";
+		}
+
+		// Clear errors after we're done. We don't need to store this info.
+		libxml_clear_errors();
+	} // End validateFiles
 }
  
 ?>

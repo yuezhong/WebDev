@@ -5,6 +5,9 @@
 * - <ul> <ol> <dl>
 * - link to infotech site (new tab / window)
 * - email link
+* - validation
+* each are worth 0.3125
+* coding style and indents are visually inspected worth 0.5 in total
 */
 
 
@@ -46,6 +49,7 @@ class ParseCA1
 	 $this->checkDTD($dom);
 	 $this->getHeadingEmailLinkMark($dom, $studentUsername);
 	 $this->countLists($dom);
+	 $this->validateHTMLFile($dom, $file);
 	}
 
 	// See if the HTML5 doctype is used
@@ -54,7 +58,7 @@ class ParseCA1
 		// <!DOCTYPE html>
 		if($dom->doctype->name === 'html')
 		{
-			$this->ca1Marks += 0.25;
+			$this->ca1Marks += 0.3125;
 			$this->ca1Comments = "DTD present: Good";
 		}
 		else
@@ -64,8 +68,8 @@ class ParseCA1
 	}
 
 	// Calls functions to headings, email, external link
-	// Adds them up to give final mark. Only get marks (0.25)
-	// if all is present, otherwise, no marks.
+	// Adds them up to give final mark. Only get marks (0.3125)
+	// if all is present, half marks for one or the other.
 	public function getHeadingEmailLinkMark($dom, $studentUsername)
 	{
 		$heading_mark = 0;
@@ -76,10 +80,20 @@ class ParseCA1
 
 		if(($heading_mark == 1) && ($maillink_mark == 1))
 		{
-			$this->ca1Marks += 0.25;
-			$this->ca1Comments .= ";Multiple headings plus email link and external link to infotech server present";
+			$this->ca1Marks += 0.3125;
+			$this->ca1Comments .= ";Multiple headings plus email link and external link present";
 		}
-		else
+		elseif(($heading_mark == 0) && ($maillink_mark == 1))
+		{
+			$this->ca1Marks += 0.15625;
+			$this->ca1Comments .= ";Need to have multiple headings";
+		}
+		elseif(($heading_mark == 1) && ($maillink_mark == 0))
+		{
+			$this->ca1Marks += 0.15625;
+			$this->ca1Comments .= ";Missing Email link and external link.";
+		}
+		elseif(($heading_mark == 0) && ($maillink_mark == 0))
 		{
 			$this->ca1Comments .= ";Need to have multiple headings plus email link and link to infotech server.";
 		}
@@ -89,12 +103,12 @@ class ParseCA1
 	public function countHeadings($dom)
 	{
 	$heading_type = array(
-					'h1' => 0,
-					'h2' => 0,
-					'h3' => 0,
-					'h4' => 0,
-					'h5' => 0,
-					'h6' => 0
+			'h1' => 0,
+			'h2' => 0,
+			'h3' => 0,
+			'h4' => 0,
+			'h5' => 0,
+			'h6' => 0
 	);
 	$total = 0;
 
@@ -151,13 +165,12 @@ class ParseCA1
 	  }
 	 }
 
-	 // External Link - to infotech server
+	 // External Link that opens in new window or tab
 	 foreach($links as $link)
 	 {
 	  if($link->hasAttribute('target'))
 	  {
-		if(($link->getAttribute('target') === '_blank') &&
-		($link->getAttribute('href') === "http://infotech.scu.edu.au/~" . $studentUsername))
+		if($link->getAttribute('target') === '_blank')
 		{
 		  $ex_mark++;
 		}
@@ -196,7 +209,7 @@ class ParseCA1
 
 		if(($list_types['ul'] > 0) && ($list_types['ol']) > 0 && ($list_types['dl'] > 0))
 		{
-			$this->ca1Marks += 0.25;
+			$this->ca1Marks += 0.3125;
 			$this->ca1Comments .= ";All 3 list types used: Good";
 		}
 		else
@@ -214,7 +227,7 @@ class ParseCA1
 
 		if($found > 0)
 		{
-			$this->ca1Marks += 0.25;
+			$this->ca1Marks += 0.3125;
 			$this->ca1Comments .= ";At least 1 nested list used: Good";
 		}
 		else
@@ -222,8 +235,9 @@ class ParseCA1
 			$this->ca1Comments .= ";Need to use 1 nested list";
 		}
 
-	}
+	} // End countLists
 
+	// Loop function to get Nested Lists
 	public function countNestedList($dom, $outlist, $inlist)
 	{
 		$found = 0;
@@ -238,8 +252,26 @@ class ParseCA1
 		}
 
 		return $found;
-	}
+	} // End countNestedList
 
+	// Validate HTML
+	public function validateHTMLFile($dom, $file)
+	{
+		libxml_use_internal_errors(true);
+		$dom->load($file);
+		if($dom->validate())
+		{
+			$this->ca1Marks += 0.3125;
+			$this->ca1Comments .= ";HTML validates, no errors.";
+		}
+		else
+		{
+			$this->ca1Comments .= ";HTML doesn't validate.";
+		}
+
+		// Clear errors after we're done. We don't need to store this info.
+		libxml_clear_errors();
+	} // End validateHTMLFile
 }
 
 ?>

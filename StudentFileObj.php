@@ -11,6 +11,7 @@ class StudentFileObj
 	private	$width;
 	private $subfolder;
 	private $mime;
+	private $validation;
 
 	public function __construct($username, $filename, $type, $subfolder)
 	{
@@ -118,6 +119,17 @@ class StudentFileObj
 	public function getMimeType()
 	{
 		return $this->mime;
+	}
+	
+	// Set validation. If file has no errors, then Y.
+	public function setValidation($validated)
+	{
+		$this->validation = $validated;
+	}
+
+	public function getValidation()
+	{
+		return $this->validation;
 	}
 
 
