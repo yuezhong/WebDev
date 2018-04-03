@@ -31,7 +31,7 @@ class checkAssignment
 
 		while(($line = fgetcsv($file, 200, ",")) !== FALSE)
 		{
-			$student = new StudentObj($line[0], $line[1], $line[2]);
+			$student = new StudentObj($line[0], $line[1], $line[2], $line[3], $line[4], $line[5], $line[6]);
 			$student_arr[$line[2]] = $student;
 		}
 		fclose($file);
@@ -105,22 +105,22 @@ class checkAssignment
 	// Validate files
 	public function validateFiles($StudentFiles)
 	{
-		// Calling external validator
-		exec("java -Xss512k -jar ./vnu.jar --css --errors-only " . 
-		$cssfiles->getFilepath() . " 2>&1", $output, $validatedCss);
-		if($validatedCss > 0)
+		foreach($StudentFiles["css"] as $cssfiles)
 		{
-			// Any errors found, set validation to N
-			$cssfiles->setValidation("n");
+			// Calling external validator
+			exec("java -Xss512k -jar ./vnu.jar --css --errors-only " . 
+			$cssfiles->getFilepath() . " 2>&1", $output, $validatedCss);
+			if($validatedCss > 0)
+			{
+				// Any errors found, set validation to N
+				$cssfiles->setValidation("n");
+			}
+			else
+			{
+				// No errors, set validation to y
+				$cssfiles->setValidation("y");
+			}
 		}
-		else
-		{
-			// No errors, set validation to y
-			$cssfiles->setValidation("y");
-		}
-	}
-
-		
 	} // End validateFiles
 	
 	// Start Assesessment checks
@@ -143,7 +143,8 @@ class checkAssignment
 		if(($StudentFiles["html"][$index] !== "") || ($StudentFiles["css"][$index] !== ""))
 		{		
 			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_ISY10209_Ass1/");	
-			$pca->start($index, $username, $StudentFiles);
+			echo "Checking file: " . $index . "\n";
+			$pca->start($index, $student, $StudentFiles);
 			$smarks->setMarks($pca->getMarks());
 			$smarks->setComments($pca->getComments());
 			$student->addRtotal($pca->getMarks());
@@ -167,14 +168,18 @@ class checkAssignment
 
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "1");
+			echo "Added CA1 marks and comments.\n";
 
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA2", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "2");
-
+			echo "Added CA2 marks and comments.\n";
+			
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3");
-
+			echo "Added CA3 marks and comments.\n";
+			
 			$htmlOut->closeHTML($student->getRtotal());
+			echo "Feedback file generated for $username.\n";
 
 		}
 	}
@@ -211,7 +216,7 @@ else
 	switch($assignment)
 	{
 		case 1:
-			//$chAss->startAssignment1($students, $StudentFiles);
+			$chAss->startAssignment1($students, $StudentFiles);
 			break;
 		case 2:
 			//$chAss->startAssignment2();

@@ -6,47 +6,77 @@ class StudentObj
 	private $studentId;
 	private $username;
 	private $runningTotal;
+	// Visual checks, all taken from csv file.
+	private $ConceptMap;
+	private $Storyboards;
+	private $CodingStyle;
+	private $Upload;
 
-	public function __construct($name, $id, $username)
+	public function __construct($name, $id, $username, $ConceptMap, $Storyboards, $CodingStyle, $Upload)
 	{
-			$this->name = $name;
-			$this->studentId = $id;
-			$this->username = $username;
+		$this->name = $name;
+		$this->studentId = $id;
+		$this->username = $username;
+		$this->ConceptMap = $ConceptMap;
+		$this->Storyboards = $Storyboards;
+		$this->CodingStyle = $CodingStyle;
+		$this->Upload = $Upload;
 	}
 
 	public function setStudentname($name)
 	{
-			$this->name = $name;
+		$this->name = $name;
 	}
 
 	public function getStudentname()
 	{
-			return $this->name;
+		return $this->name;
 	}
 
 	public function setStudentId($studentid)
 	{
-			$this->studentId = $studentid;
+		$this->studentId = $studentid;
 	}
 
 	public function getStudentId()
 	{
-			return $this->studentId;
+		return $this->studentId;
 	}
 	
 	public function getUsername()
 	{
-			return $this->username;
+		return $this->username;
 	}
 	
 	public function getRtotal()
 	{
-			return $this->runningTotal;
+		return $this->runningTotal;
 	}
 	
 	public function addRtotal($mark)
 	{
 		$this->runningTotal += $mark;
+	}
+	
+	// Visual checks, all taken from csv file.
+	public function getConceptMap()
+	{
+		return $this->ConceptMap;
+	}
+	
+	public function getStoryboards()
+	{
+		return $this->Storyboards;
+	}
+
+	public function getCodingStyle()
+	{
+		return $this->CodingStyle;
+	}
+	
+	public function getUpload()
+	{
+		return $this->Upload;
 	}
 
 } // End StudentObj

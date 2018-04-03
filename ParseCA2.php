@@ -33,7 +33,8 @@ class ParseCA2
 	 return $this->ca2Comments;
 	}
 
-	public function start($file, $username, $StudentFiles)
+	// Start
+	public function start($file, $student, $StudentFiles)
 	{
 	 //Load the HTML page
 	 $html = file_get_contents($file);
@@ -44,6 +45,7 @@ class ParseCA2
 	 //Parse the HTML. The @ is used to suppress any parsing errors
 	 @$dom->loadHTML($html);
 
+	 $username = $student->getusername();
 	 
 	 $this->getPalignment($dom);
 	 $this->validateFiles($dom, $file, $username, $StudentFiles);

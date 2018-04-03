@@ -35,7 +35,8 @@ class ParseCA3
 	 return $this->ca3Comments;
 	}
 
-	public function start($file, $studentUsername, $StudentFileObj)
+	// Start
+	public function start($file, $student, $StudentFileObj)
 	{
 	 //Load the HTML page
 	 $html = file_get_contents($file);
@@ -46,15 +47,17 @@ class ParseCA3
 	 //Parse the HTML. The @ is used to suppress any parsing errors
 	 @$dom->loadHTML($html);
 	 
-	 $this->getExtLink($dom, $studentUsername);
+	 $username = $student->getusername();
+	 
+	 $this->getExtLink($dom, $username);
 	 $this->getAltTags($dom);
 	 $this->getImageLinks($dom, $StudentFileObj);
 	 $this->checkImageProp($dom, $StudentFileObj);
 	 $this->checkMime($dom, $StudentFileObj);
-	 $this->validateFiles($studentUsername, $StudentFileObj);
-	 //$this->checkBgImages($studentUsername, $StudentFileObj)
+	 $this->validateFiles($username, $StudentFileObj);
+	 $this->checkBgImages($student, $StudentFileObj);
 	 	 
-	}
+	} // End Start
 	
 	
 	// Find external link to infotech server.
@@ -152,8 +155,7 @@ class ParseCA3
 				//echo $imageFile . " : " . $pathToImage . "\n";
 				$link['broken']++;
 			}
-		}
-		
+		}		
 		
 		if(($link['broken'] > 0) && ($link['working'] === 0))
 		{
@@ -170,8 +172,6 @@ class ParseCA3
 			$this->ca3Marks += 0.4;
 			$this->ca3Comments .= ";All images appear to be working.";
 		}
-		
-
 	} // End getImageLinks
 	
 	// Check image properties, height, width and size
@@ -295,30 +295,66 @@ class ParseCA3
 	} // End checkMime
 	
 	// Check Background images in html
-	public function checkBgImages($studentUsername, $StudentFileObj)
+	public function checkBgImages($student, $StudentFileObj)
 	{
+		$username = $student->getusername();
+		$working = 0;
+		$broken = 0;
 		$urls = array();
-		$url_regex = '/url\(([\s])?([\"|\'])?(.*?)([\"|\'])?([\s])?\)/i';
+		$url_regex = '/(?<=url\().*?(?=\);)/';
 
+		// Find urls in css
 		foreach($StudentFileObj["css"] as $cssfile)
 		{
-			if($cssfile->getusername() === $studentUsername)
+			if($cssfile->getusername() === $username)
 			{
 			 $text = file_get_contents($cssfile->getFilepath());
-			 preg_match_all($url_regex, $text, $urls);
+			 preg_match_all($url_regex, $text, $matches);
+			 $urls = preg_replace('/\s+\"/', '', $matches[0]);
 			}
 		}
 		
+		// Find urls in html
 		foreach($StudentFileObj["html"] as $htmlfile)
 		{
-			if($htmlfile->getusername() === $studentUsername)
+			if($htmlfile->getusername() === $username)
 			{
 			 $text = file_get_contents($htmlfile->getFilepath());
-			 preg_match_all($url_regex, $text, $urls);
+			 preg_match_all($url_regex, $text, $matches);
 			}
 		}
-	print_r($urls);
-
+		// Merge them
+		$urls = array_merge($urls, preg_replace('/\s+\"/', '', $matches[0]));
+		// print_r($urls);
+		
+		// Check if links work.
+		foreach($urls as $url)
+		{
+			$index = $this->dirpath . $url;
+			if($StudentFileObj["images"][$index] !== '')
+			{
+				$working++;
+			}
+			else
+			{
+				$broken++;
+			}
+		}
+		
+		if(($working > 0) && ($broken === 0))
+		{
+			$this->ca3Marks += 0.4;
+			$this->ca3Comments .= ";Background images used and all works: Good";
+		}
+		elseif(($working > 0) && ($broken > 0))
+		{
+			$this->ca3Marks += 0.2;
+			$this->ca3Comments .= ";Background images used and some works, check your paths.";
+		}
+		else
+		{
+			$this->ca3Comments .= ";No working background images used.";
+		}
 	} // End checkBgImages
 
 	

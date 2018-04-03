@@ -20,7 +20,6 @@ class ParseCA1
 	{
 	 // Default constructor
 	 $this->ca1Marks = 0;
-
 	 $this->ca1Comments = "";
 	}
 
@@ -34,8 +33,8 @@ class ParseCA1
 	 return $this->ca1Comments;
 	}
 
-
-	public function start($file, $studentUsername)
+	// Start
+	public function start($file, $student)
 	{
 	 //Load the HTML page
 	 $html = file_get_contents($file);
@@ -45,12 +44,15 @@ class ParseCA1
 
 	 //Parse the HTML. The @ is used to suppress any parsing errors
 	 @$dom->loadHTML($html);
+	 
+	 $username = $student->getusername();
 
 	 $this->checkDTD($dom);
-	 $this->getHeadingEmailLinkMark($dom, $studentUsername);
+	 $this->getHeadingEmailLinkMark($dom, $username);
 	 $this->countLists($dom);
 	 $this->validateHTMLFile($dom, $file);
-	}
+	 $this->visualChecks($student);
+	} // End Start
 
 	// See if the HTML5 doctype is used
 	public function checkDTD($dom)
@@ -272,6 +274,45 @@ class ParseCA1
 		// Clear errors after we're done. We don't need to store this info.
 		libxml_clear_errors();
 	} // End validateHTMLFile
+	
+	// Apply visual check scores and comments
+	public function visualChecks($student)
+	{
+		/*	Max marks for concept map and storyboards are 0.2 each.
+		 *	Max marks for coding style is 0.1
+		 */
+		$this->ca1Marks += $student->getConceptMap() + 
+						   $student->getStoryboards() + 
+						   $student->getCodingStyle();
+		
+		if($student->getConceptMap() < 0.2)
+		{
+			$this->ca1Comments .= ";More work required on concept map, ideally drawn with software.";
+		}
+		else
+		{
+			$this->ca1Comments .= ";Concept map is suitable: Good.";
+		}
+		if($student->getStoryboards() < 0.2)
+		{
+			$this->ca1Comments .= ";More work required on storyboard. 
+			Check that your diagram matches your webpage.";
+		}
+		else
+		{
+			$this->ca1Comments .= ";Storyboard is suitable: Good.";
+		}
+		if($student->getCodingStyle() < 0.1)
+		{
+			$this->ca1Comments .= ";Coding style, indenting is not consistent. Please ensure your:
+			html, head, body tags are all on the left with no spaces in front of them. Break up long lines
+			so that you don't have to scroll across the screen.";
+		}
+		else
+		{
+			$this->ca1Comments .= ";Coding Style is consistent: Good.";
+		}
+	}
 }
 
 ?>
