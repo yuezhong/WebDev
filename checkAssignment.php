@@ -5,6 +5,7 @@ require_once "StudentMarksObj.php";
 require_once "ParseCA1.php";
 require_once "ParseCA2.php";
 require_once "ParseCA3.php";
+require_once "ParseCA3a.php";
 require_once "OutputResults.php";
 
 class checkAssignment
@@ -131,7 +132,7 @@ class checkAssignment
 		$parseObj = "Parse" . $ca;
 		
 
-		if($ca === "CA3")
+		if(($ca === "CA3") || ($ca === "CA3a"))
 		{
 			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/index.html"; 
 		}
@@ -140,7 +141,8 @@ class checkAssignment
 			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/" . $cafile;
 		}
 			
-		if(($StudentFiles["html"][$index] !== "") || ($StudentFiles["css"][$index] !== ""))
+		if(array_key_exists($index, $StudentFiles["html"]) || 
+		   array_key_exists($index, $StudentFiles["css"]))
 		{		
 			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_ISY10209_Ass1/");	
 			echo "Checking file: " . $index . "\n";
@@ -156,7 +158,7 @@ class checkAssignment
 		return $smarks;
 
 	} // End CheckAssessment
-	
+		
 	// Start Assignment 1 checks
 	public function startAssignment1($students, $StudentFiles)
 	{
@@ -177,6 +179,10 @@ class checkAssignment
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3");
 			echo "Added CA3 marks and comments.\n";
+			
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3a", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3a");
+			echo "Added CA3a marks and comments.\n";
 			
 			$htmlOut->closeHTML($student->getRtotal());
 			echo "Feedback file generated for $username.\n";
