@@ -7,9 +7,8 @@
  * Image links
  * Navbar
  * Image formatting
- * Image naming
  * Link to infotech
- * Each is worth 0.4
+ * Each is worth 0.5
  */
  
 class ParseCA3
@@ -56,6 +55,7 @@ class ParseCA3
 	 $this->checkMime($dom, $StudentFileObj);
 	 $this->validateFiles($username, $StudentFileObj);
 	 $this->checkBgImages($student, $StudentFileObj);
+	 $this->findNavbar($dom, $StudentFileObj);
 	 	 
 	} // End Start
 	
@@ -87,12 +87,12 @@ class ParseCA3
 	  
 	 if($mark["link_ext"] >= 1)
 	 {
-		$this->ca3Marks += 0.4;
+		$this->ca3Marks += 0.5;
 		$this->ca3Comments .= "External link to infotech server found: Good";
 	 }
 	 elseif($mark["link_no_ext"] >= 1)
 	 {
-		$this->ca3Marks += 0.2;
+		$this->ca3Marks += 0.25;
 		$this->ca3Comments .= 'Missing target="_blank" option for link' . 
 		 ": http://infotech.scu.edu.au/~$studentUsername";
 	 }
@@ -123,7 +123,7 @@ class ParseCA3
 	 
 	 if($altTag > 1)
 	 {
-		 $this->ca3Marks += 0.4;
+		 $this->ca3Marks += 0.5;
 		 $this->ca3Comments .= ";Alt tags used for images: Good";
 	 }
 	 else
@@ -144,8 +144,7 @@ class ParseCA3
 		foreach ($images as $image)
 		{
 			$imageFile = $this->dirpath . $image->getAttribute('src');
-			$pathToImage = $StudentFileObj["images"][$imageFile]->getFilepath();
-			if($pathToImage === $imageFile)
+			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
 				//echo $imageFile . ":Matches\n";
 				$link['working']++;
@@ -165,11 +164,11 @@ class ParseCA3
 		{
 			$this->ca3Comments .= ";" . $link['broken'] . " broken images and " . $link['working'] . 
 					" working images found. Check your paths, spelling and capital usage.";
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 		}
 		elseif(($link['broken'] === 0 ) && ($link['working'] > 0))
 		{
-			$this->ca3Marks += 0.4;
+			$this->ca3Marks += 0.5;
 			$this->ca3Comments .= ";All images appear to be working.";
 		}
 	} // End getImageLinks
@@ -192,34 +191,34 @@ class ParseCA3
 		foreach($images as $image)
 		{
 			$imageFile = $this->dirpath . $image->getAttribute('src');
-			$pathToImage = $StudentFileObj["images"][$imageFile]->getFilepath();
-			
-			// Check Width
-			if ($StudentFileObj["images"][$pathToImage]->getImageWidth() !== $image->getAttribute('width')) {
-				$imageCheck['nopwidth']++;
-			}
-			else
+			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
-				$imageCheck['width']++;
-			}
-			
-			// Check height
-			if ($StudentFileObj["images"][$pathToImage]->getImageHeight() !== $image->getAttribute('height')) {
-				$imageCheck['nopheight']++;
-			}
-			else
-			{
-				$imageCheck['height']++;
-			}
-			
-			// Max image file size is 100kb
-			if ($StudentFileObj["images"][$pathToImage]->getFileSize() > 102400) 
-			{
-				$imageCheck["nopsize"]++;
-			}
-			else
-			{
-				$imageCheck["opsize"]++;
+				$pathToImage = $StudentFileObj["images"][$imageFile]->getFilepath();
+				// Check Width
+				if ($StudentFileObj["images"][$pathToImage]->getImageWidth() !== $image->getAttribute('width')) {
+					$imageCheck['nopwidth']++;
+				}
+				else
+				{
+					$imageCheck['width']++;
+				}
+				// Check height
+				if ($StudentFileObj["images"][$pathToImage]->getImageHeight() !== $image->getAttribute('height')) {
+					$imageCheck['nopheight']++;
+				}
+				else
+				{
+					$imageCheck['height']++;
+				}
+				// Max image file size is 100kb
+				if ($StudentFileObj["images"][$pathToImage]->getFileSize() > 102400) 
+				{
+					$imageCheck["nopsize"]++;
+				}
+				else
+				{
+					$imageCheck["opsize"]++;
+				}
 			}
 		}
 		
@@ -238,7 +237,7 @@ class ParseCA3
 			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
 			(($OpPercentage > 50)))
 		{
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";Some height or width values do not match height and 
 			width properties of images. Too many image file size is greater than 100kb.";
 		}
@@ -246,7 +245,7 @@ class ParseCA3
 			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
 			($OpPercentage <= 50))
 		{
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";Image height and width values matches image properties, however
 			too many image file size is greater than 100kb.";
 		}
@@ -254,7 +253,7 @@ class ParseCA3
 			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
 			($OpPercentage <= 50))
 		{
-			$this->ca3Marks += 0.4;
+			$this->ca3Marks += 0.5;
 			$this->ca3Comments .= ";Image height and width values matches image properties,
 			the majority of image file sizes are less than 100kb: Good";
 		}
@@ -270,16 +269,19 @@ class ParseCA3
 		foreach($images as $image)
 		{
 			$imageFile = $this->dirpath . $image->getAttribute('src');
-			$ext = $StudentFileObj["images"][$imageFile]->getFileType();
-			$mime = $StudentFileObj["images"][$imageFile]->getMimeType();
+			if(array_key_exists($imageFile, $StudentFileObj["images"]))
+			{
+				$ext = $StudentFileObj["images"][$imageFile]->getFileType();
+				$mime = $StudentFileObj["images"][$imageFile]->getMimeType();
 
-			if($mime === "jpeg")
-			{
-				$mime = "jpg";
-			}
-			if($ext !== $mime)
-			{
-				$badFormat++;
+				if($mime === "jpeg")
+				{
+					$mime = "jpg";
+				}
+				if($ext !== $mime)
+				{
+					$badFormat++;
+				}
 			}
 		}
 		
@@ -289,7 +291,7 @@ class ParseCA3
 		}
 		else
 		{
-			$this->ca3Marks += 0.4;
+			$this->ca3Marks += 0.5;
 			$this->ca3Comments .= ";No problems found with image format: Good.";
 		}
 	} // End checkMime
@@ -343,12 +345,12 @@ class ParseCA3
 		
 		if(($working > 0) && ($broken === 0))
 		{
-			$this->ca3Marks += 0.4;
+			$this->ca3Marks += 0.5;
 			$this->ca3Comments .= ";Background images used and all works: Good";
 		}
 		elseif(($working > 0) && ($broken > 0))
 		{
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";Background images used and some works, check your paths.";
 		}
 		else
@@ -361,8 +363,106 @@ class ParseCA3
 	// Find Navbar and make sure links works
 	public function findNavbar($dom, $StudentFileObj)
 	{
+		$navbar_used = 0;
+		$webpages = array("index" => 0,
+					   "resume" => 0,
+					   "webskill" => 0,
+					   "web_skill" => 0
+		);
+		$broken = array("index" => 0,
+					   "resume" => 0,
+					   "webskill" => 0,
+					   "web_skill" => 0
+		);
 		
-	}
+		// Check for div with either Class or Id called nav, navbar, navigation, menu
+		$divs = $dom->getElementsByTagName("div");
+		foreach($divs as $div)
+		{
+			if((strtolower($div->getAttribute("class")) === "nav") ||
+			   (strtolower($div->getAttribute("class")) === "navbar") ||
+			   (strtolower($div->getAttribute("class")) === "navigation") ||
+			   (strtolower($div->getAttribute("class")) === "menu") ||
+			   (strtolower($div->getAttribute("id")) === "nav") ||
+			   (strtolower($div->getAttribute("id")) === "navbar") ||
+			   (strtolower($div->getAttribute("id")) === "navigation") ||
+			   (strtolower($div->getAttribute("id")) === "menu"))
+			   {
+				   $navbar_used++;
+			   }  
+		}
+		
+		// Find Nav Element
+		$navtags = $dom->getElementsByTagName("nav");
+		foreach($navtags as $navtag)
+		{
+			if($navtag->nodeValue !== '')
+			{
+				$navbar_used++;
+			}
+		}
+		
+		// Search all links and see if they point to: index, resume and webskills
+		// Also check if the file exists.
+		$navlinks = $dom->getElementsByTagName("a");
+		foreach($webpages as $webpage=>$total)
+		{
+			foreach($navlinks as $navlink)
+			{
+				if($navlink->hasAttribute('href'))
+				{
+					$href = trim($navlink->getAttribute('href'));
+					$spattern = "/$webpage/";
+					preg_match_all($spattern, $href, $matches);
+					//print_r($matches);
+					if(array_key_exists(0, $matches[0]))
+					{
+						//echo "Found $webpage link: " . $navlink->getAttribute('href') ."\n";
+						$rlink = $this->dirpath . $navlink->getAttribute('href');
+						
+						if(array_key_exists($rlink, $StudentFileObj["html"]))
+						{
+							$webpages[$webpage]++;   
+						}
+						else
+						{
+							$broken[$webpage]++;
+						}
+					}
+				}
+			}
+		}
+		// print_r($webpages, $broken);
+		
+		if((count($webpages) > 0) && (count($broken) === 0) && $navbar_used > 0)
+		{
+			$this->ca3Marks += 0.5;
+			$this->ca3Comments .= ";Navigation bar found and all links appears to work: Good.";
+		}
+		elseif((count($webpages) > 0) && (count($broken) > 0) && $navbar_used > 0)
+		{
+			$this->ca3Marks += 0.25;
+			$this->ca3Comments .= ";Navigation bar found and some broken links, 
+			check your path and spelling.";
+		}
+		elseif((count($webpages) > 0) && (count($broken) === 0) && $navbar_used === 0)
+		{
+			$this->ca3Marks += 0.25;
+			$this->ca3Comments .= ";No Navigation bar found but all links appears to work.";
+		}
+		elseif((count($webpages) > 0) && (count($broken) > 0) && $navbar_used === 0)
+		{
+			$this->ca3Marks += 0.25;
+			$this->ca3Comments .= ";No Navigation bar found and some broken links, 
+			check your path and spelling.";
+		}
+		elseif((count($webpages) === 0) && (count($broken) > 0) && $navbar_used === 0)
+		{
+			$this->ca3Comments .= ";No Navigation bar found and no working links, 
+			check your path and spelling.";
+		}
+	
+	} // End findNavbar
 	
 	// Validate HTML
 	public function validateFiles($username, $StudentFiles)
@@ -403,17 +503,17 @@ class ParseCA3
 		
 		if($non_validatedCss = 0 && $non_validatedHtml = 0)
 		{
-			$this->ca3Marks += 0.4;
+			$this->ca3Marks += 0.5;
 			$this->ca3Comments .= ";HTML and CSS validates, no errors.";
 		}
 		elseif($non_validatedCss > 0 && $non_validatedHtml = 0)
 		{
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";HTML validates but CSS contain errors.";
 		}		
 		elseif($non_validatedCss = 0 && $non_validatedHtml > 0)
 		{
-			$this->ca3Marks += 0.2;
+			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";HTML does not validates but CSS validates.";
 		}		
 		else
