@@ -50,7 +50,8 @@ class ParseCA2
 	 $username = $student->getusername();
 	 
 	
-	 $this->getPalignment($dom);
+	 $this->getPalignment($dom, $html, $username, $StudentFiles);
+	 /*
 	 $this->validateFiles($dom, $file, $username, $StudentFiles);
 	 $this->getDiv($dom);
 	 $this->getSpan($dom);
@@ -61,16 +62,15 @@ class ParseCA2
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
 	 $this->checkCssAttrib($file, $username, $StudentFiles);
-
+*/
 	} // End start
 	
 	
 	// Get Paragraph Alignment.
-	// Only get full marks (0.3) if all are present
-	public function getPalignment($dom)
+	// Full marks for any 3. Left is default, so only need to search for 2.
+	public function getPalignment($dom, $html, $username, $StudentFiles)
 	{
 		$paragraphs = $dom->getElementsByTagName('p');
-		$mark = 0;
 		// Alignment types, ignoring left, as that's default
 		$alignment_type = array(
 						'right' => 0,
@@ -78,7 +78,7 @@ class ParseCA2
 						'justify' => 0
 						);
 
-		// Search for paragraph alignment types.
+		// Search for inline paragraph alignment types.
 		// Left is default, so no need to search for it.
 		foreach($alignment_type as $type=>$value)
 		{
@@ -86,7 +86,7 @@ class ParseCA2
 			{
 			 if($paragraph->getAttribute('align') === $type)
 			 {
-					$alignment_type[$type]++;
+				$alignment_type[$type]++;
 			 }
 			 elseif($paragraph->hasAttribute('style'))
 			 {
@@ -99,16 +99,67 @@ class ParseCA2
 			 }
 			}
 		}
+		
+		// Search Embedded CSS for paragraphy alignment type
+		preg_match_all('/\b(?:p\s*?[{]\s*(text-align.*?)(?=[;}]))/', $html, $matches);
+		//print_r($matches);
+
+		foreach($alignment_type as $type=>$value)
+		{
+			foreach($matches[1] as $match)
+			{
+				if(strpos(strtolower($match), $type) !== FALSE)
+				{
+					$alignment_type[$type]++;
+				}
+			}
+		}
+		
+		// Search in external CSS file
+		foreach($StudentFiles["css"] as $StudentFile)
+		{
+			if($StudentFile->getusername() === $username &&
+				(strpos(strtoupper($StudentFile->getFilename()), "CA2") !== FALSE))
+			{
+				//echo "Checking: " . $StudentFile->getFilepath() . "\n";
+				$cssfile = file_get_contents($StudentFile->getFilepath());
+							
+				preg_match_all('/\b(?:p\s*?[{]\s*(text-align.*?)(?=[;}]))/', $cssfile, $matches);
+				foreach($alignment_type as $type=>$value)
+				{
+					foreach($matches[1] as $match)
+					{
+						if(strpos(strtolower($match), $type) !== FALSE)
+						{
+							$alignment_type[$type]++;
+						}
+					}
+				}	
+			}
+		}
 
 		// Only get a mark if all 3 types are found. Left is ignored as that's the default one.
-		if(($alignment_type['right'] > 0) && ($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
+		if(($alignment_type['right'] > 0) && ($alignment_type['center'] > 0) ||
+		   ($alignment_type['right'] > 0) && ($alignment_type['justify'] > 0) ||
+		   ($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
 		{
 			$this->ca2Marks += 0.3;
-			$this->ca2Comments .= "All paragraph alignment found: Good";
+			$this->ca2Comments .= "At least 3 types of paragraph alignment used: Good";
 		}
-		else
+		elseif(
+	   ($alignment_type['right'] > 0) && ($alignment_type['center'] === 0) && ($alignment_type['justify'] === 0)
+	|| ($alignment_type['right'] === 0) && ($alignment_type['center'] > 0) && ($alignment_type['justify'] === 0)
+	|| ($alignment_type['right'] === 0) && ($alignment_type['center'] === 0) && ($alignment_type['justify'] > 0)
+		) 
 		{
-			$this->ca2Comments .= "Need to use all 4 types of alignment: Left Right Center and Justify";
+			$this->ca2Marks += 0.15;
+			$this->ca2Comments .= "Need to use 3 types of alignment: Left Right Center and Justify";
+		}
+		elseif(($alignment_type['right'] === 0) && ($alignment_type['center'] === 0)
+				&& ($alignment_type['justify'] === 0)
+		)
+		{
+			$this->ca2Comments .= "No paragraph alignments found.";
 		}
 	} // End getPalignment
 	
