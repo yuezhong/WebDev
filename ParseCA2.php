@@ -16,11 +16,13 @@ class ParseCA2
 {
 	private $ca2Marks;
 	private $ca2Comments;
+	private $dirpath;
 	
-	public function __construct()
+	public function __construct($dirpath)
 	{
 		$this->ca2Marks = 0;
 		$this->ca2Comments = "";
+		$this->dirpath = $dirpath;
 	}
 	
 	public function getMarks()
@@ -47,13 +49,14 @@ class ParseCA2
 
 	 $username = $student->getusername();
 	 
+	
 	 $this->getPalignment($dom);
 	 $this->validateFiles($dom, $file, $username, $StudentFiles);
 	 $this->getDiv($dom);
 	 $this->getSpan($dom);
 	 $this->getCssStyle($dom);
-	 $this->checkBulletsUL($dom);
-	 $this->checkBulletsOL($dom);
+	 $this->checkBulletsUL($dom, $html, $username, $StudentFiles);
+	 $this->checkBulletsOL($dom, $html, $username, $StudentFiles);
 	 $this->checkFontStyles($dom);
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
@@ -309,68 +312,136 @@ class ParseCA2
 	} // End getCssStyle
 
 	// Find Bullet change for <UL> lists
-	public function checkBulletsUL($dom)
+	public function checkBulletsUL($dom, $html, $username, $StudentFiles)
 	{
 	 $uBullets = 0;
 
-	 $ulists = $dom->getElementsByTagName('ul');
-	 foreach($ulists as $ulist)
-	 {
-	  if($ulist->hasAttribute('type'))
-	  {
-		if($ulist->getAttribute('type') === 'square')
+		// Search in html
+		$ulists = $dom->getElementsByTagName('ul');
+		foreach($ulists as $ulist)
 		{
-		 $uBullets++;
+			if($ulist->hasAttribute('type'))
+			{
+				if($ulist->getAttribute('type') === 'square')
+				{
+				 $uBullets++;
+				}
+			}
+			elseif($ulist->hasAttribute('style'))
+			{
+				$style = $ulist->getAttribute('style');
+				if((strtolower(substr($style, 0)) === 'list-style-type: square') 
+				|| (strtolower(substr($style, 0)) === 'list-style-type:square'))
+				{
+					$uBullets++;
+				}
+			}
 		}
-	  }
-	  elseif($ulist->hasAttribute('style'))
-	  {
-	   $style = $ulist->getAttribute('style');
-	   if((strtolower(substr($style, 0)) === 'list-style-type: square') 
-		   || (strtolower(substr($style, 0)) === 'list-style-type:square'))
-	   {
-		$uBullets++;
-	   }
-	  }
-	 }
+
+		// Search embedded CSS in html
+		preg_match_all('/\b(?:ul\s*?[{]\s*(list-style-type.*?)(?=[;}]))/', $html, $matches);
+		//print_r($matches);
+
+		foreach($matches[1] as $match)
+		{
+			if(strpos(strtolower($match), "square") !== FALSE)
+			{
+			 $uBullets++;
+			}
+		}
+		
+		// Search in external CSS file
+		foreach($StudentFiles["css"] as $StudentFile)
+		{
+			if($StudentFile->getusername() === $username &&
+				(strpos(strtoupper($StudentFile->getFilename()), "CA2") !== FALSE))
+			{
+				//echo "Checking: " . $StudentFile->getFilepath() . "\n";
+				$cssfile = file_get_contents($StudentFile->getFilepath());
+							
+				preg_match_all('/\b(?:ul\s*?[{]\s*(list-style-type.*?)(?=[;}]))/', $cssfile, $matches);
+				foreach($matches[1] as $match)
+				{
+					if(strpos(strtolower($match), "square") !== FALSE)
+					{
+					 $uBullets++;
+					 //echo $uBullets . " :Square Bullets found\n";
+					}
+				}	
+			}
+		}
+		//echo "Total " . $uBullets . " :Square Bullets found\n";
 	 
-	 if($uBullets > 0)
-	 {
+		if($uBullets > 0)
+		{
 		 $this->ca2Marks += 0.3;
 		 $this->ca2Comments.= "; Square UL bullets: Good";
-	 }
-	 else
-	 {
+		}
+		else
+		{
 		 $this->ca2Comments.= ";No change to UL bullet type";
-	 }
+		}
 	} // End checkBulletsUL
 	
 	
 	// Find Bullet change for <OL> lists
-	public function checkBulletsOL($dom)
+	public function checkBulletsOL($dom, $html, $username, $StudentFiles)
 	{
 	 $oBullets = 0;
 
-	 $olists = $dom->getElementsByTagName('ol');
-	 foreach($olists as $olist)
-	 {
-	  if($olist->hasAttribute('type'))
-	  {
-		if($olist->getAttribute('type') === 'i')
+		$olists = $dom->getElementsByTagName('ol');
+		foreach($olists as $olist)
 		{
-		 $oBullets++;
+			if($olist->hasAttribute('type'))
+			{
+				if($olist->getAttribute('type') === 'i')
+				{
+				 $oBullets++;
+				}
+			}
+			elseif($olist->hasAttribute('style'))
+			{
+				$style = $olist->getAttribute('style');
+				if((strtolower(substr($style, 0)) === 'list-style-type: lower-roman') 
+					|| (strtolower(substr($style, 0)) === 'list-style-type:lower-roman'))
+				{
+				$oBullets++;
+				}
+			}
 		}
-	  }
-	  elseif($olist->hasAttribute('style'))
-	  {
-	   $style = $olist->getAttribute('style');
-	   if((strtolower(substr($style, 0)) === 'list-style-type: lower-roman') 
-		   || (strtolower(substr($style, 0)) === 'list-style-type:lower-roman'))
-	   {
-		$oBullets++;
-	   }
-	  }
-	 }
+	 
+		// Search embedded CSS in html
+		preg_match_all('/\b(?:ul\s*?[{]\s*(list-style-type.*?)(?=[;}]))/', $html, $matches);
+
+		foreach($matches[1] as $match)
+		{
+			if(strpos(strtolower($match), "lower-roman") !== FALSE)
+			{
+			 $oBullets++;
+			}
+		}
+
+		// Search in external CSS file
+		foreach($StudentFiles["css"] as $StudentFile)
+		{
+			if($StudentFile->getusername() === $username &&
+				(strpos(strtoupper($StudentFile->getFilename()), "CA2") !== FALSE))
+			{
+				//echo "Checking: " . $StudentFile->getFilepath() . "\n";
+				$cssfile = file_get_contents($StudentFile->getFilepath());
+							
+				preg_match_all('/\b(?:ul\s*?[{]\s*(list-style-type.*?)(?=[;}]))/', $cssfile, $matches);
+				foreach($matches[1] as $match)
+				{
+					if(strpos(strtolower($match), "lower-roman") !== FALSE)
+					{
+					 $oBullets++;
+					 //echo $oBullets . " :Lower-roman found\n";
+					}
+				}	
+			}
+		}
+		//echo "Total " . $oBullets . " :Lower-roman found\n";
 	 
 	 if($oBullets > 0)
 	 {
@@ -476,7 +547,7 @@ class ParseCA2
 		// Look for styles_CA2.css file
 		foreach($StudentFiles["css"] as $sfcss)
 		{
-			if(($sfcss->getFilename() === "styles_CA2.css") &&
+			if((strpos(strtoupper($sfcss->getFilename()), "CA2") !== FALSE) &&
 			($sfcss->getusername() === $username))
 			{
 				$filepath = $sfcss->getFilepath();
