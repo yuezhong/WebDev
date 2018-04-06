@@ -37,6 +37,7 @@ class ParseCA3a
 	 
 	 $username = $student->getusername();
 	 $this->checkInternalLinks($dom, $username, $StudentFileObj);
+	 $this->checkUploads($student);
 	 
 	} // End start
 	
@@ -52,7 +53,7 @@ class ParseCA3a
 		foreach ($images as $image)
 		{
 			$imageFile = $this->dirpath . $image->getAttribute('src');
-			if($StudentFileObj["images"][$imageFile] !== '')
+			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
 				$link['working']++;
 			}
@@ -95,7 +96,6 @@ class ParseCA3a
 			}
 		}
 		
-		
 		if(($link['broken'] > 0) && ($link['working'] === 0))
 		{
 			$this->ca3aComments .= ";No working links found. Check your paths, spelling and capital usage.";
@@ -111,24 +111,27 @@ class ParseCA3a
 			$this->ca3aMarks += 1;
 			$this->ca3aComments .= ";All internal links appear to be working.";
 		}
-		
-
 	} // End checkInternalLinks
 	
+	public function checkUploads($student)
+	{
+		/*	Max marks for uploads is 3
+		 *	Check for correct folders and casenames for files and images.
+		 */
+		$this->ca3aMarks += $student->getUpload();
+		
+		if($student->getUpload() === 3)
+		{
+			$this->ca3aComments .= ";Uploaded webpage works and all filenames uses appropriate cases
+					images in their correct folder.";
+		}
+		elseif($student->getUpload() < 3)
+		{
+			$this->ca3aComments .= ";Uploaded webpage not working correctly. Check filenames
+			case and ensure images and files are in their correct folders.";
+		}
+	}
 }
 
 
-
-/*
-	if($student->getUpload() < 4)
-		{
-			$this->ca1Comments .= ";Check your uploads and links. 
-			Make sure your file name cases match your links. Ensure images and css files are in their own folders.";
-		}
-		else
-		{
-			$this->ca1Comments .= ";Uploaded and working: Good";
-		}
-		
-	*/	
 ?>

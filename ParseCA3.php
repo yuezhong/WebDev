@@ -47,16 +47,16 @@ class ParseCA3
 	 @$dom->loadHTML($html);
 	 
 	 $username = $student->getusername();
-	 
+	
 	 $this->getExtLink($dom, $username);
 	 $this->getAltTags($dom);
 	 $this->getImageLinks($dom, $StudentFileObj);
-	 $this->checkImageProp($dom, $StudentFileObj);
+	 $this->checkImageProp($dom, $StudentFileObj); 
 	 $this->checkMime($dom, $StudentFileObj);
 	 $this->validateFiles($username, $StudentFileObj);
 	 $this->checkBgImages($student, $StudentFileObj);
 	 $this->findNavbar($dom, $StudentFileObj);
-	 	 
+		 
 	} // End Start
 	
 	
@@ -191,6 +191,7 @@ class ParseCA3
 		foreach($images as $image)
 		{
 			$imageFile = $this->dirpath . $image->getAttribute('src');
+			//echo "$imageFile\n";
 			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
 				$pathToImage = $StudentFileObj["images"][$imageFile]->getFilepath();
@@ -213,10 +214,12 @@ class ParseCA3
 				// Max image file size is 100kb
 				if ($StudentFileObj["images"][$pathToImage]->getFileSize() > 102400) 
 				{
+					echo "$pathToImage: Non optimal\n";
 					$imageCheck["nopsize"]++;
 				}
 				else
 				{
+					echo "$pathToImage: Optimal\n";
 					$imageCheck["opsize"]++;
 				}
 			}
@@ -333,7 +336,7 @@ class ParseCA3
 		foreach($urls as $url)
 		{
 			$index = $this->dirpath . $url;
-			if($StudentFileObj["images"][$index] !== '')
+			if(array_key_exists($index, $StudentFileObj["images"]))
 			{
 				$working++;
 			}

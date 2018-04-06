@@ -10,6 +10,8 @@ class OutputResults
 	public function __construct($student, $assignment)
 	{
 		$studentName = $student->getStudentname();
+		$subMarks = $student->getSubMark();
+		$subComments = $student->getSubComment();
 		switch($assignment)
 		{
 			case 1:
@@ -68,7 +70,8 @@ class OutputResults
 		$this->htmlOutput->append("<TR><TH>Student:</TH><TH>" . $studentName . "</TH>");
 		$this->htmlOutput->append("<TH>". $student->getStudentId() ."</TH>". "<TH>ISY10209 - Assignment $assignment </TH></TR>");
 		$this->htmlOutput->append("<TR><TH>Criteria</TH><TH>Max</TH><TH>Mark</TH><TH>Comments</TH></TR></THEAD><TBODY>");
-		$this->htmlOutput->append("<TR><TD>Overall Submission</TD><TD>1.00</TD><TD>1.00</TD><TD>Ok</TD></TR>");
+		$this->htmlOutput->append("<TR><TD>Overall Submission</TD><TD>1.00</TD><TD>
+		$subMarks</TD><TD>$subComments</TD></TR>");
 	}
 
 	public function buildHTML($marks, $maxmarks, $comments, $CA)

@@ -51,7 +51,6 @@ class ParseCA2
 	 
 	
 	 $this->getPalignment($dom, $html, $username, $StudentFiles);
-	 /*
 	 $this->validateFiles($dom, $file, $username, $StudentFiles);
 	 $this->getDiv($dom);
 	 $this->getSpan($dom);
@@ -62,7 +61,7 @@ class ParseCA2
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
 	 $this->checkCssAttrib($file, $username, $StudentFiles);
-*/
+
 	} // End start
 	
 	
@@ -636,13 +635,14 @@ class ParseCA2
 		(count($results_bgcolours) < 2) && (count($results_colors) >= 2))
 		{
 			$this->ca2Marks += 0.15;
-			$this->ca2Comments .= ";Need 2 or more text and background colours. 
+			$this->ca2Comments .= ";Need 2 or more text and at least 2 or more of background colours. 
 			Found:" . count($results_bgcolours) ." Background colours, " . count($results_colors)
 			. " colours.";
 		}
 		else
 		{
-			$this->ca2Comments .= ";Need at least 2 or more of text colours and background colours.";
+			$this->ca2Comments .= ";Need at least 2 or more of text colours and 
+			at least 2 or more of background colours.";
 		}
 		
 	} // End checkCssAttrib

@@ -30,15 +30,131 @@ class checkAssignment
 	{
 		$file = fopen($this->studentcsv, "r") or exit("Unable to locate student csv file!");
 
+		// CSV file colums:
+		// Fullname,StudentID,Username,ConceptMap,Storyboards,CodingStyle,Upload
 		while(($line = fgetcsv($file, 200, ",")) !== FALSE)
 		{
-			$student = new StudentObj($line[0], $line[1], $line[2], $line[3], $line[4], $line[5], $line[6]);
+			$student = new StudentObj($line[0], $line[1], $line[2], 
+						$line[3], $line[4], $line[5], $line[6]);
 			$student_arr[$line[2]] = $student;
 		}
 		fclose($file);
 		
 		return $student_arr;
 	} // End readStudentCSV
+	
+	// Check and rename directories
+	public function prepDirectories($students)
+	{
+	 try{
+		 $submission[] = array(
+				"root" => 0,
+				"images" => 0,
+				"css" => 0,
+				"docs" => 0
+		 );
+		 
+		$dir = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator(
+		$this->dirRoot, 
+		FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS));
+		
+		// Loop through once to check formatting and 
+		// see if css, images and doc folders are present
+		foreach($dir as $name=>$value)
+		{
+			$rootpath = explode('/', $dir->getSubPath());
+			$username = preg_split('/[\s_-]/', strtolower($rootpath[0]));
+			if(strpos(strtolower($rootpath[0]), "isy10209_ass1"))
+			{
+			  $submission[$username[0]]["root"] = 1;
+			}
+			
+			if(array_key_exists(1, $rootpath))
+			{
+				$filetype = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+				if((strtolower($rootpath[1]) === "css") &&
+				($filetype === "css"))
+				{
+					$submission[$username[0]]["css"] = 1;
+					//echo "$rootpath[1] : css folder present\n";
+				}
+
+				if(((strtolower($rootpath[1]) === "images") ||
+				(strtolower($rootpath[1]) === "image") ||
+				(strtolower($rootpath[1]) === "img") ||
+				(strtolower($rootpath[1]) === "imgs")) &&
+				(($filetype === "png") || ($filetype === "jpg") || ($filetype === "gif")))
+				{
+					$submission[$username[0]]["images"] = 1;
+					//echo "$rootpath[1] : images folder present\n";
+				}
+
+				if(((strtolower($rootpath[1]) === "doc") ||
+				(strtolower($rootpath[1]) === "docs") ||
+				(strtolower($rootpath[1]) === "document") ||
+				(strtolower($rootpath[1]) === "documents")) &&
+				(($filetype === "doc") || ($filetype === "docx") || ($filetype === "pdf")
+				|| ($filetype === "rtf")))
+				{
+					$submission[$username[0]]["docs"] = 1;
+					//echo "$rootpath[1] : docs folder present\n";
+				}
+			}
+		}
+		
+		// Move all files to another folder while changing root folder
+		// to lowercase.
+		foreach($dir as $name=>$value)
+		{
+			$rootpath = explode('/', $dir->getSubPath());
+			$rootpath[0] = strtolower(trim($rootpath[0]));
+			$npath = substr_replace($dir->key(), $rootpath[0], (strlen($this->dirRoot) + 1), strlen($rootpath[0]));
+			// echo "$npath\n";
+			$newName = realpath(dirname(__FILE__)) . "/re_" . $npath;
+			$oldName = realpath(dirname(__FILE__)) . "/" . $value;
+			$newDir = realpath(dirname(__FILE__)) . "/re_" . $this->dirRoot . "/" . implode("/", $rootpath);
+		
+            if(!file_exists($newDir))
+			{
+				echo "Making Dir: $newDir\n";
+				mkdir($newDir);
+			}
+			copy($oldName,$newName);
+			echo "Copied $oldName to $newName\n";
+		}
+
+		// Updating dirRoot to new location
+		$this->dirRoot = "re_" . $this->dirRoot;
+		// Assigning Marks
+		foreach($submission as $student=>$marks)
+		{
+			if(array_key_exists($student, $students))
+			{
+				if(count($marks) === 4)
+				{
+					$students[$student]->setSubMark(1);
+					$students[$student]->setSubComment("Overall Submission all ok.");
+				}
+				elseif(($marks["root"] === 0) && (count($marks) === 3))
+				{
+					$students[$student]->setSubMark(0.5);
+					$students[$student]->setSubComment("Submission name incorrect, all folders present.");
+				}
+				elseif(($marks["root"] === 1) && (count($marks) <= 3))
+				{
+					$students[$student]->setSubMark(0.5);
+					$students[$student]->setSubComment("Submission name correct, missing some folders.");
+				}
+			}			
+		}
+		return $students;
+	 }
+	 catch(Exception $error)
+	 {
+		 echo $error->getMessage();
+	 }
+	} // End Rename Directories
 	
 	// recurse through the directories
 	public function recurseDir($filetypes)
@@ -104,6 +220,8 @@ class checkAssignment
 	} // End Recurse Directories
 	
 	// Validate files
+	// Uses external validator: vnu.jar
+	// From https://validator.github.io/validator/
 	public function validateFiles($StudentFiles)
 	{
 		foreach($StudentFiles["css"] as $cssfiles)
@@ -134,17 +252,17 @@ class checkAssignment
 
 		if(($ca === "CA3") || ($ca === "CA3a"))
 		{
-			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/index.html"; 
+			$index = $this->dirRoot . "/" . $username . "_isy10209_ass1/index.html"; 
 		}
 		else
 		{
-			$index = $this->dirRoot . "/" . $username . "_ISY10209_Ass1/" . $cafile;
+			$index = $this->dirRoot . "/" . $username . "_isy10209_ass1/" . $cafile;
 		}
-			
+		echo "$index \n";		
 		if(array_key_exists($index, $StudentFiles["html"]) || 
 		   array_key_exists($index, $StudentFiles["css"]))
 		{		
-			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_ISY10209_Ass1/");	
+			$pca = new ${"parseObj"}($this->dirRoot . "/" . $username . "_isy10209_ass1/");	
 			echo "Checking file: " . $index . "\n";
 			$pca->start($index, $student, $StudentFiles);
 			$smarks->setMarks($pca->getMarks());
@@ -165,6 +283,7 @@ class checkAssignment
 		
 		foreach($students as $username=>$student)
 		{
+			$student->addRtotal($student->getSubMark());
 			$htmlOut = new OutputResults($students[$username], "1");
 			$smarks = new StudentMarksObj("1", $students[$username]->getStudentId());
 
@@ -175,7 +294,7 @@ class checkAssignment
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA2", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "2");
 			echo "Added CA2 marks and comments.\n";
-			
+			/*
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3");
 			echo "Added CA3 marks and comments.\n";
@@ -183,7 +302,7 @@ class checkAssignment
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3a", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3a");
 			echo "Added CA3a marks and comments.\n";
-			
+		*/	
 			$htmlOut->closeHTML($student->getRtotal());
 			echo "Feedback file generated for $username.\n";
 
@@ -211,7 +330,10 @@ else
 	
 	// Call our function to read in the student list
 	$students = $chAss->readStudentCSV();
+	// Prep directories and check for overall submission
+	$students = $chAss->prepDirectories($students);
 	
+
 	// Call our function to recurse through the directories
 	$StudentFiles["html"] = $chAss->recurseDir("html");
 	$StudentFiles["css"] = $chAss->recurseDir("css");
