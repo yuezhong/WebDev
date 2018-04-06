@@ -11,6 +11,7 @@ class StudentObj
 	private $Storyboards;
 	private $CodingStyle;
 	private $Upload;
+	private $subMark;
 
 	public function __construct($name, $id, $username, $ConceptMap, $Storyboards, $CodingStyle, $Upload)
 	{
@@ -79,6 +80,15 @@ class StudentObj
 		return $this->Upload;
 	}
 
+	public function setSubMark($mark)
+	{
+		$this->subMark = $mark;
+	}
+	
+	public function getSubMark()
+	{
+		return $this->subMark;
+	}
 } // End StudentObj
 
 ?>
