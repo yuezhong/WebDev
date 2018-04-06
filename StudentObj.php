@@ -12,6 +12,7 @@ class StudentObj
 	private $CodingStyle;
 	private $Upload;
 	private $subMark;
+	private $subComment;
 
 	public function __construct($name, $id, $username, $ConceptMap, $Storyboards, $CodingStyle, $Upload)
 	{
@@ -88,6 +89,16 @@ class StudentObj
 	public function getSubMark()
 	{
 		return $this->subMark;
+	}
+	
+	public function setSubComment($comment)
+	{
+		$this->subComment = $comment;
+	}
+	
+	public function getSubComment()
+	{
+		return $this->subComment;
 	}
 } // End StudentObj
 
