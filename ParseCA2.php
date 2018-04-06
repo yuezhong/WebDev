@@ -49,7 +49,6 @@ class ParseCA2
 
 	 $username = $student->getusername();
 	 
-	
 	 $this->getPalignment($dom, $html, $username, $StudentFiles);
 	 $this->validateFiles($dom, $file, $username, $StudentFiles);
 	 $this->getDiv($dom);
@@ -61,6 +60,7 @@ class ParseCA2
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
 	 $this->checkCssAttrib($file, $username, $StudentFiles);
+	 $this->findFontFamily($file, $username, $StudentFiles);
 
 	} // End start
 	
@@ -142,7 +142,7 @@ class ParseCA2
 		   ($alignment_type['right'] > 0) && ($alignment_type['justify'] > 0) ||
 		   ($alignment_type['center'] > 0) && ($alignment_type['justify'] > 0))
 		{
-			$this->ca2Marks += 0.3;
+			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= "At least 3 types of paragraph alignment used: Good";
 		}
 		elseif(
@@ -151,7 +151,7 @@ class ParseCA2
 	|| ($alignment_type['right'] === 0) && ($alignment_type['center'] === 0) && ($alignment_type['justify'] > 0)
 		) 
 		{
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= "Need to use 3 types of alignment: Left Right Center and Justify";
 		}
 		elseif(($alignment_type['right'] === 0) && ($alignment_type['center'] === 0)
@@ -178,7 +178,7 @@ class ParseCA2
 		
          if($div_mark > 0)
          {
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";Div used: Good";
          }
 		 else
@@ -204,7 +204,7 @@ class ParseCA2
 		
          if($span_mark > 0)
          {
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";Span tag used: Good";
          }
 		 else
@@ -264,7 +264,7 @@ class ParseCA2
 		// Need a min of 1
 		if($total >= 1)
 		{
-			$this->ca2Marks += 0.3;
+			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";Minimum 1 of " . $attribute . " attributes found: Good.";
 		}
 		else
@@ -352,7 +352,7 @@ class ParseCA2
 
 	if(($mark_in > 0) && ($mark_em > 0) && ($mark_ex > 0))
 	{
-		$this->ca2Marks += 0.3;
+		$this->ca2Marks += 0.25;
 		$this->ca2Comments .= ";All levels of CSS present: Good";
 	}
 	else
@@ -424,7 +424,7 @@ class ParseCA2
 	 
 		if($uBullets > 0)
 		{
-		 $this->ca2Marks += 0.3;
+		 $this->ca2Marks += 0.25;
 		 $this->ca2Comments.= "; Square UL bullets: Good";
 		}
 		else
@@ -495,7 +495,7 @@ class ParseCA2
 	 
 	 if($oBullets > 0)
 	 {
-		 $this->ca2Marks += 0.3;
+		 $this->ca2Marks += 0.25;
 		 $this->ca2Comments .= ";OL bullet type changed to lower-roman: Good";
 	 }
 	 else
@@ -542,7 +542,7 @@ class ParseCA2
 		 
 		 if($total >= 2)
 		 {
-			$this->ca2Marks += 0.3;
+			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";At least 2 font-weight, styles, size used: Good";
 		 }
 		 else
@@ -569,17 +569,17 @@ class ParseCA2
 		
 		if($dom->validate() && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
 		{
-			$this->ca2Marks += 0.3;
+			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";HTML and CSS validates, no errors.";
 		}
 		elseif(($dom->validate() === TRUE) && ($StudentFiles["css"][$filepath]->getValidation() === "n"))
 		{
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML validates but CSS contain errors.";
 		}		
 		elseif(($dom->validate() === FALSE) && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
 		{
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML does not validates but CSS validates.";
 		}		
 		else
@@ -628,13 +628,13 @@ class ParseCA2
 		
 		if((count($results_bgcolours) >= 2) && (count($results_colors) >= 2))
 		{
-			$this->ca2Marks += 0.3;
+			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";2 or more text and background colours used: Good.";
 		}
 		elseif((count($results_bgcolours) >= 2) && (count($results_colors) < 2) ||
 		(count($results_bgcolours) < 2) && (count($results_colors) >= 2))
 		{
-			$this->ca2Marks += 0.15;
+			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";Need 2 or more text and at least 2 or more of background colours. 
 			Found:" . count($results_bgcolours) ." Background colours, " . count($results_colors)
 			. " colours.";
@@ -647,6 +647,91 @@ class ParseCA2
 		
 	} // End checkCssAttrib
 	
+	// Find font-family
+	public function findFontFamily($file, $username, $StudentFiles)
+	{
+		$websafeFont = array(
+			"verdana" => 0,
+			"trebuchet" => 0,
+			"arial" => 0,
+			"georgia" => 0,
+			"times new roman" => 0,
+			"webdings" => 0,
+			"wingding" => 0
+		);
+		
+		// Look for styles_CA2.css file
+		foreach($StudentFiles["css"] as $sfcss)
+		{
+			if((strpos(strtoupper($sfcss->getFilename()), "CA2") !== FALSE) &&
+			($sfcss->getusername() === $username))
+			{
+				$filepath = $sfcss->getFilepath();
+			}
+		}
+		// Get font-family
+		$cssfile = file_get_contents($filepath);
+		// Search for pattern, starting with font-family: and ending with ;
+		// preg_replace removes whitespaces
+		preg_match_all("/(?<=font-family).*(?=;)/", $cssfile, $matches);
+		$fonts = preg_replace('/\s+/', '', $matches[0]);
+		//print_r($fonts);
+		
+		foreach($fonts as $font)
+		{
+			$ffonts = explode(",",$font);
+			foreach($websafeFont as $wbfont=>$value)
+			{
+				foreach($ffonts as $ffont)
+				{
+					//echo "$ffont\n";
+					if(strpos(strtolower($ffont), $wbfont))
+					{
+						echo "Increasing $wbfont\n";
+						$websafeFont[$wbfont]++;
+					}
+				}
+			}
+		}
+		//print_r($websafeFont);
+		
+		$htmlfile = file_get_contents($file);
+		preg_match_all("/(?<=font-family).*(?=;)/", $htmlfile, $matches);
+		$fonts = preg_replace('/\s+/', '', $matches[0]);
+		foreach($fonts as $font)
+		{
+			$ffonts = explode(",",$font);
+			foreach($websafeFont as $wbfont=>$value)
+			{
+				foreach($ffonts as $ffont)
+				{
+					//echo "$ffont\n";
+					if(strpos(strtolower($ffont), $wbfont))
+					{
+						echo "Increasing $wbfont\n";
+						$websafeFont[$wbfont]++;
+					}
+				}
+			}
+		}
+		
+		if(count($websafeFont) >= 2)
+		{
+			$this->ca2Marks += 0.25;
+			$this->ca2Comments .= ";Web safe font family used: Good";
+		}
+		elseif(count($websafeFont) < 2)
+		{
+			$this->ca2Marks += 0.125;
+			$this->ca2Comments .= ";One web safe font found, Need at least 2 or more 
+			different types of web safe fonts, such as Verdana, Arial, Times New Roman";
+		}
+		else
+		{
+			$this->ca2Comments .= ";Need at least 2 or more different types of web safe fonts,
+				such as Verdana, Arial, Times New Roman";
+		}
+	}
 }
 
 ?>
