@@ -276,6 +276,20 @@ class checkAssignment
 		return $smarks;
 
 	} // End CheckAssessment
+	
+	// Output to CSV all student totals
+	public function printCSV($students)
+	{
+		$csvfile = fopen("student_totals.csv", 'w');
+		
+		foreach($students as $student)
+		{
+			fputcsv($csvfile, array($student->getStudentname(), 
+			$student->getusername(), $student->getRtotal()), ",");
+		}
+		
+		fclose($csvfile);
+	}
 		
 	// Start Assignment 1 checks
 	public function startAssignment1($students, $StudentFiles)
@@ -294,7 +308,7 @@ class checkAssignment
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA2", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "2");
 			echo "Added CA2 marks and comments.\n";
-			/*
+			
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3");
 			echo "Added CA3 marks and comments.\n";
@@ -302,10 +316,9 @@ class checkAssignment
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3a", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(), $smarks->getComments(), "3a");
 			echo "Added CA3a marks and comments.\n";
-		*/	
+			
 			$htmlOut->closeHTML($student->getRtotal());
 			echo "Feedback file generated for $username.\n";
-
 		}
 	}
 	
@@ -353,6 +366,9 @@ else
 			//$chAss->startAssignment3();
 			break;
 	}
+	
+	// Output all results to CSV
+	$chAss->printCSV($students);
 }
 
 ?>
