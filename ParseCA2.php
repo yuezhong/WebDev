@@ -56,7 +56,7 @@ class ParseCA2
 	 $this->getCssStyle($dom);
 	 $this->checkBulletsUL($dom, $html, $username, $StudentFiles);
 	 $this->checkBulletsOL($dom, $html, $username, $StudentFiles);
-	 $this->checkFontStyles($dom);
+	 $this->checkFontStyles($dom, $file, $username, $StudentFiles);
 	 $this->searchForAttribute($dom, "class");
 	 $this->searchForAttribute($dom, "id");
 	 $this->checkCssAttrib($file, $username, $StudentFiles);
@@ -505,7 +505,7 @@ class ParseCA2
 	} // End checkBulletsOL
 	
 	// Find font-styles, weight, size, e.g. Bold, Italic,
-	public function checkFontStyles($dom)
+	public function checkFontStyles($dom, $file, $username, $StudentFiles)
 	{
 		$fonts = array (
 			'b' => 0,
@@ -531,24 +531,61 @@ class ParseCA2
 				$fonts[$font] = 1;
 			}
           }
-         }
-		 
-		 // Total them
-		 $total = 0;
-		 foreach($fonts as $font=>$value)
-		 {
-			$total += $value;
-		 }
-		 
+        }
+		
+		// Total them
+		$total = 0;
+		foreach($fonts as $font=>$value)
+		{
+		$total += $value;
+		}
+		
+		// Look for font-weight in external css file
+		// Look for styles_CA2.css file
+		foreach($StudentFiles["css"] as $sfcss)
+		{
+			if((strpos(strtoupper($sfcss->getFilename()), "CA2") !== FALSE) &&
+			($sfcss->getusername() === $username))
+			{
+				$filepath = $sfcss->getFilepath();
+			}
+		}
+		
+		$cssfile = file_get_contents($filepath);
+		// Search for pattern, starting with font-weight: and ending with ;
+		// preg_replace removes whitespaces
+		preg_match_all("/(?<=font-weight).*?(?=;)/", $cssfile, $matches);
+		$font_weight = preg_replace('/\s+/', '', $matches[0]);
+		preg_match_all("/(?<=font-style).*?(?=;)/", $cssfile, $matches);
+		$font_style = preg_replace('/\s+/', '', $matches[0]);
+		
+		$total += count(array_merge($font_weight, $font_style));
+
+		// Check html file for embeded styles
+		$htmlfile = file_get_contents($file);
+		preg_match_all("/(?<=font-weight).*?(?=;)/", $htmlfile, $matches);
+		$font_weight = preg_replace('/\s+/', '', $matches[0]);
+		preg_match_all("/(?<=font-style).*?(?=;)/", $htmlfile, $matches);
+		$font_style = preg_replace('/\s+/', '', $matches[0]);
+		
+		$total += count(array_merge($font_weight, $font_style));
+		//echo "$total\n";
+	 
 		 if($total >= 2)
 		 {
 			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";At least 2 font-weight, styles, size used: Good";
 		 }
+		 elseif($total === 1)
+		 {
+			$this->ca2Marks += 0.125;
+			$this->ca2Comments .= ";Need to use at least 2 of the following, only 1 found:
+			bold, italics, mark, strong, sub, sup";
+		 }
 		 else
 		 {
-			 $this->ca2Comments .= ";Need to use at least 2 of the following: bold, italics, mark, strong, sub, sup";
-		 }		
+			$this->ca2Comments .= ";Need to use at least 2 of the following: bold, italics, mark, strong, sub, sup";
+		 }	 
 	} // End checkFontStyles
 	
 	// Validate HTML
