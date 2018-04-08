@@ -746,7 +746,6 @@ class ParseCA2
 			$this->ca2Comments .= ";No Fonts belonging to same font family and are websafe found,
 			use web safe fonts such as Arial, Verdana which belongs to the san-serif family.";
 		}
-		echo $this->ca2Marks . " : " . $this->ca2Comments;
 	}
 	
 	// Loop function to loop through each array line, item by item
