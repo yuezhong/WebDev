@@ -686,16 +686,21 @@ class ParseCA2
 	
 	// Find font-family
 	public function findFontFamily($file, $username, $StudentFiles)
-	{
-		$websafeFont = array(
-			"verdana" => 0,
-			"trebuchet" => 0,
-			"arial" => 0,
-			"georgia" => 0,
-			"times new roman" => 0,
-			"webdings" => 0,
-			"wingding" => 0
-		);
+	{		
+		//$familycheck = array("same" => 0, "notSame" => 0);
+		// Setting up web safe font-families to search for.
+		$font_family["sans-serif"] = array("arial", "helvetica", "verdana", "trebuchet ms", 
+					"gill sans", "noto sans", "avantgarde", "tex gyre", "adventor", 
+					"urw gothic", "sans-serif");
+		$font_family["serif"] = array("times new roman", "didot", "georgia", "palatino",
+					"urw palladio", "bookman", "new century", "american typewriter",
+					"serif");
+		$font_family["monospace"] = array("courier", "freemono", "dejavu sans", "ocr a std", 
+					"andale mono", "monospace");
+		$font_family["fantasy"] = array("impact", "luminarni", "chalkduster", "jazz let",
+					"blippo", "stencil std", "marker felt", "trattatello", "fantasy");
+		$font_family["cursive"] = array("comic", "apple chancery", "bradley hand", "brush script",
+					"snell roundhand", "urw chancery l", "cursive");
 		
 		// Look for styles_CA2.css file
 		foreach($StudentFiles["css"] as $sfcss)
@@ -711,63 +716,86 @@ class ParseCA2
 		// Search for pattern, starting with font-family: and ending with ;
 		// preg_replace removes whitespaces
 		preg_match_all("/(?<=font-family).*(?=;)/", $cssfile, $matches);
-		$fonts = preg_replace('/\s+/', '', $matches[0]);
+		$fonts = preg_replace('/[\s\"\:+]/', '', $matches[0]);
 		//print_r($fonts);
 		
-		foreach($fonts as $font)
-		{
-			$ffonts = explode(",",$font);
-			foreach($websafeFont as $wbfont=>$value)
-			{
-				foreach($ffonts as $ffont)
-				{
-					//echo "$ffont\n";
-					if(strpos(strtolower($ffont), $wbfont))
-					{
-						echo "Increasing $wbfont\n";
-						$websafeFont[$wbfont]++;
-					}
-				}
-			}
-		}
-		//print_r($websafeFont);
+		$cssCheck = $this->cmpArrayData($fonts, $font_family);
 		
+		// print_r($csscheck);
 		$htmlfile = file_get_contents($file);
 		preg_match_all("/(?<=font-family).*(?=;)/", $htmlfile, $matches);
-		$fonts = preg_replace('/\s+/', '', $matches[0]);
-		foreach($fonts as $font)
-		{
-			$ffonts = explode(",",$font);
-			foreach($websafeFont as $wbfont=>$value)
-			{
-				foreach($ffonts as $ffont)
-				{
-					//echo "$ffont\n";
-					if(strpos(strtolower($ffont), $wbfont))
-					{
-						echo "Increasing $wbfont\n";
-						$websafeFont[$wbfont]++;
-					}
-				}
-			}
-		}
-		
-		if(count($websafeFont) >= 2)
+		$fonts = preg_replace('/[\s\"\:+]/', '', $matches[0]);
+		$htmlCheck = $this->cmpArrayData($fonts, $font_family);
+		$check = $this->sumMergeArrays($cssCheck, $htmlCheck);
+		//print_r($check);
+
+		if(($check["same"] > 1) && ($check["notSame"] === 0))
 		{
 			$this->ca2Marks += 0.25;
-			$this->ca2Comments .= ";Web safe font family used: Good";
+			$this->ca2Comments .= ";Fonts belong to same font family and are websafe: Good";
 		}
-		elseif(count($websafeFont) < 2)
+		elseif(($check["same"] > 1) && ($check["notSame"] > 0))
 		{
 			$this->ca2Marks += 0.125;
-			$this->ca2Comments .= ";One web safe font found, Need at least 2 or more 
-			different types of web safe fonts, such as Verdana, Arial, Times New Roman";
+			$this->ca2Comments .= ";Some fonts not in the correct font family, e.g: Arial 
+			is sans-serif. Also web safe fonts should be used, such as Verdana, Arial, 
+			Times New Roman";
 		}
-		else
+		elseif(($check["same"] === 0) && ($check["notSame"] > 1))
 		{
-			$this->ca2Comments .= ";Need at least 2 or more different types of web safe fonts,
-				such as Verdana, Arial, Times New Roman";
+			$this->ca2Comments .= ";No Fonts belonging to same font family and are websafe found,
+			use web safe fonts such as Arial, Verdana which belongs to the san-serif family.";
 		}
+		echo $this->ca2Marks . " : " . $this->ca2Comments;
+	}
+	
+	// Loop function to loop through each array line, item by item
+	public function cmpArrayData($arrayData, $cmpData)
+	{
+		$dataCheck = array( "same" => 0,
+							"notSame" => 0
+		);
+		foreach($arrayData as $dataline)
+        {
+			// Temp array for storing our results
+			$tempArray = array();
+            $checkItems = explode(",", $dataline);
+			// go through each array item
+            foreach($checkItems as $item)
+            {
+				// Compare it with our array that we want to compare
+				foreach($cmpData as $data=>$value)
+				{
+					if(in_array(strtolower($item), $value))
+					{
+					 //echo "$data : $item\n";
+					 array_push($tempArray, $data);
+					}
+				}
+            }
+            //echo count(array_unique($tempArray)) . "\n";
+			if(count(array_unique($tempArray)) > 1)
+			{
+				$dataCheck["notSame"]++;
+			}
+			else
+			{
+				$dataCheck["same"]++;
+			}
+        }
+		return $dataCheck;
+	}
+	
+	// Merge arrays and sum the values. taken from internet.
+	public function sumMergeArrays($a1, $a2)
+	{
+		$sums = array();
+		foreach (array_keys($a1 + $a2) as $key) {
+			$sums[$key] = (isset($a1[$key]) ? $a1[$key] : 0) + 
+			(isset($a2[$key]) ? $a2[$key] : 0);
+		}
+		
+		return $sums;
 	}
 }
 
