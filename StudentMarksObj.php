@@ -25,6 +25,7 @@ class StudentMarksObj
 					case 3:
 					$this->maxmarks = 8;
 					break;
+					case '3a':
 					case 5:
 					$this->maxmarks = 4;
 					break;
