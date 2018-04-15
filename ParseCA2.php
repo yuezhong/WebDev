@@ -518,6 +518,7 @@ class ParseCA2
 			'mark' => 0
 			
 		);
+		$filepath ="";
 		
 		// Only need to ensure that at least 1 of each type is used.
 		foreach($fonts as $font=>$value)
@@ -551,7 +552,7 @@ class ParseCA2
 			}
 		}
 		
-		$cssfile = file_get_contents($filepath);
+		$cssfile = ($filepath !== "" ? file_get_contents($filepath) : "");
 		// Search for pattern, starting with font-weight: and ending with ;
 		// preg_replace removes whitespaces
 		preg_match_all("/(?<=font-weight).*?(?=;)/", $cssfile, $matches);
@@ -593,6 +594,7 @@ class ParseCA2
 	{
 		libxml_use_internal_errors(true);
 		$dom->load($file);
+		$filepath ="";
 		
 		// Look for styles_CA2.css file
 		foreach($StudentFiles["css"] as $sfcss)
@@ -604,17 +606,26 @@ class ParseCA2
 			}
 		}
 		
-		if($dom->validate() && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
+		if(array_key_exists($filepath, $StudentFiles["css"]))
+		{
+			$cssValidate = $StudentFiles["css"][$filepath]->getValidation();
+		}
+		else
+		{
+			$cssValidate = "n";
+		}			
+		
+		if($dom->validate() && ( $cssValidate === "y"))
 		{
 			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";HTML and CSS validates, no errors.";
 		}
-		elseif(($dom->validate() === TRUE) && ($StudentFiles["css"][$filepath]->getValidation() === "n"))
+		elseif(($dom->validate() === TRUE) && ($cssValidate === "n"))
 		{
 			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML validates but CSS contain errors.";
 		}		
-		elseif(($dom->validate() === FALSE) && ($StudentFiles["css"][$filepath]->getValidation() === "y"))
+		elseif(($dom->validate() === FALSE) && ($cssValidate === "y"))
 		{
 			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML does not validates but CSS validates.";
@@ -631,6 +642,7 @@ class ParseCA2
 	// Find text and background colours
 	public function checkCssAttrib($file, $username, $StudentFiles)
 	{
+		$filepath = "";
 		// Look for styles_CA2.css file
 		foreach($StudentFiles["css"] as $sfcss)
 		{
@@ -642,7 +654,7 @@ class ParseCA2
 		}
 
 		// Get Text Colours
-		$cssfile = file_get_contents($filepath);
+		$cssfile = ($filepath !== "" ? file_get_contents($filepath) : "");
 		// Search for pattern, starting with color: and ending with ;
 		// preg_replace removes whitespaces
 		preg_match_all("/(?<=color:).*?(?=;)/", $cssfile, $matches);
@@ -700,7 +712,8 @@ class ParseCA2
 		$font_family["fantasy"] = array("impact", "luminarni", "chalkduster", "jazz let",
 					"blippo", "stencil std", "marker felt", "trattatello", "fantasy");
 		$font_family["cursive"] = array("comic", "apple chancery", "bradley hand", "brush script",
-					"snell roundhand", "urw chancery l", "cursive");
+					"snell roundhand", "urw chancery l", "cursive");	
+		$filepath ="";
 		
 		// Look for styles_CA2.css file
 		foreach($StudentFiles["css"] as $sfcss)
@@ -712,7 +725,7 @@ class ParseCA2
 			}
 		}
 		// Get font-family
-		$cssfile = file_get_contents($filepath);
+		$cssfile = ($filepath !== "" ? file_get_contents($filepath) : "");
 		// Search for pattern, starting with font-family: and ending with ;
 		// preg_replace removes whitespaces
 		preg_match_all("/(?<=font-family).*(?=;)/", $cssfile, $matches);
