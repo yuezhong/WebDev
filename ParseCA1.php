@@ -6,7 +6,7 @@
 * - link to infotech site (new tab / window)
 * - email link
 * - validation
-* each are worth 0.3125
+* each are worth 0.5
 * coding style and indents are visually inspected worth 0.5 in total
 */
 
@@ -15,12 +15,14 @@ class ParseCA1
 {
 	private $ca1Marks;
 	private $ca1Comments;
+	private $dirpath;
 
-	public function __construct()
+	public function __construct($dirpath)
 	{
 	 // Default constructor
 	 $this->ca1Marks = 0;
 	 $this->ca1Comments = "";
+	 $this->dirpath = $dirpath;
 	}
 
 	public function getMarks()
@@ -34,7 +36,7 @@ class ParseCA1
 	}
 
 	// Start
-	public function start($file, $student)
+	public function start($file, $student, $StudentFiles)
 	{
 	 //Load the HTML page
 	 $html = file_get_contents($file);
@@ -50,7 +52,7 @@ class ParseCA1
 	 $this->checkDTD($dom);
 	 $this->getHeadingEmailLinkMark($dom, $username);
 	 $this->countLists($dom);
-	 $this->validateHTMLFile($dom, $file);
+	 $this->validateFile($username, $StudentFiles);
 	 $this->visualChecks($student);
 	} // End Start
 
@@ -60,7 +62,7 @@ class ParseCA1
 		// <!DOCTYPE html>
 		if($dom->doctype->name === 'html')
 		{
-			$this->ca1Marks += 0.3125;
+			$this->ca1Marks += 0.25;
 			$this->ca1Comments = "DTD present: Good";
 		}
 		else
@@ -75,29 +77,40 @@ class ParseCA1
 	public function getHeadingEmailLinkMark($dom, $studentUsername)
 	{
 		$heading_mark = 0;
-		$maillink_mark = 0;
+		$maillink_mark = "";
 
 		$heading_mark = $this->countHeadings($dom);
-		$maillink_mark = $this->checkMailLink($dom, $studentUsername);
+		$maillink_mark = $this->checkMailLink($dom);
+		// echo $heading_mark . "\n" . $maillink_mark . "\n";
 
-		if(($heading_mark == 1) && ($maillink_mark == 1))
+		if(($heading_mark == 1) && ($maillink_mark == "11"))
 		{
-			$this->ca1Marks += 0.3125;
-			$this->ca1Comments .= ";Multiple headings plus email link and external link present";
+			$this->ca1Marks += 0.75;
+			$this->ca1Comments .= ";Multiple headings plus email link and external link present.";
 		}
-		elseif(($heading_mark == 0) && ($maillink_mark == 1))
+		elseif(($heading_mark == 0) && ($maillink_mark == "11"))
 		{
-			$this->ca1Marks += 0.15625;
+			$this->ca1Marks += 0.5;
 			$this->ca1Comments .= ";Need to have multiple headings";
 		}
-		elseif(($heading_mark == 1) && ($maillink_mark == 0))
+		elseif(($heading_mark == 1) && ($maillink_mark == "01"))
 		{
-			$this->ca1Marks += 0.15625;
-			$this->ca1Comments .= ";Missing Email link and external link.";
+			$this->ca1Marks += 0.5;
+			$this->ca1Comments .= ";Missing external link.";
 		}
-		elseif(($heading_mark == 0) && ($maillink_mark == 0))
+                elseif(($heading_mark == 1) && ($maillink_mark == "10"))
+                {
+                        $this->ca1Marks += 0.5;
+                        $this->ca1Comments .= ";Missing email link.";
+                }
+		elseif(($heading_mark == 1) && ($maillink_mark == "00"))
 		{
-			$this->ca1Comments .= ";Need to have multiple headings plus email link and link to infotech server.";
+			$this->ca1Comments .= ";Found multiple headings, missing email link and link to the web server.";
+			$this->ca1Marks += 0.25;
+		}
+		elseif(($heading_mark == 0) && ($maillink_mark == "00"))
+		{
+			$this->ca1Comments .= ";Need to have multiple headings plus email link and link to the web server.";
 		}
 	} // End getHeadingEmailLinkMark
 
@@ -147,7 +160,7 @@ class ParseCA1
 
 
 	// Check for email and external link. Needs to open in new tab or window.
-	public function checkMailLink($dom, $studentUsername)
+	public function checkMailLink($dom)
 	{
 	 $mail_mark = 0;
 	 $ex_mark = 0;
@@ -162,6 +175,7 @@ class ParseCA1
 
 		if(strtolower(substr($href, 0, 7)) === 'mailto:')
 		{
+		  // echo substr($href, 0, 7) . "- Email link\n";
 		   $mail_mark++;
 		}
 	  }
@@ -179,15 +193,21 @@ class ParseCA1
 	  }
 	 }
 
-	 // Only gets marks if both are present.
+	$retMark = "00";
 	if(($ex_mark > 0) && ($mail_mark > 0))
 	{
-		return(1);
+	  $retMark = "11";
 	}
-	else
+	elseif(($ex_mark == 0) && ($mail_mark > 0))
 	{
-		return(0);
+	  $retMark = "01";
 	}
+	elseif(($ex_mark > 0) && ($mail_mark == 0))
+	{
+	  $retMark = "10";
+	}
+
+	return($retMark);
 	} // End checkMailLink
 
 	// Count lists, +1 nested
@@ -211,7 +231,7 @@ class ParseCA1
 
 		if(($list_types['ul'] > 0) && ($list_types['ol']) > 0 && ($list_types['dl'] > 0))
 		{
-			$this->ca1Marks += 0.3125;
+			$this->ca1Marks += 0.25;
 			$this->ca1Comments .= ";All 3 list types used: Good";
 		}
 		else
@@ -229,7 +249,7 @@ class ParseCA1
 
 		if($found > 0)
 		{
-			$this->ca1Marks += 0.3125;
+			$this->ca1Marks += 0.25;
 			$this->ca1Comments .= ";At least 1 nested list used: Good";
 		}
 		else
@@ -256,6 +276,7 @@ class ParseCA1
 		return $found;
 	} // End countNestedList
 
+	/*
 	// Validate HTML
 	public function validateHTMLFile($dom, $file)
 	{
@@ -274,45 +295,113 @@ class ParseCA1
 		// Clear errors after we're done. We don't need to store this info.
 		libxml_clear_errors();
 	} // End validateHTMLFile
+	*/
+	
+	public function validateFile($username, $StudentFiles)
+	{
+		foreach($StudentFiles["html"] as $sfhtml)
+		{
+			if((strpos(strtoupper($sfhtml->getFilename()), "CA1")) && 
+			($sfhtml->getusername() === $username))
+			{
+				$filepath = $sfhtml->getFilepath();
+			}
+		}
+		
+		if(array_key_exists($filepath, $StudentFiles["html"]))
+		{
+			$htmlValidate = $StudentFiles["html"][$filepath]->getValidation();
+		}
+		else
+		{
+			$htmlValidate = "n";
+		}
+			
+		if($htmlValidate === "y")
+		{
+			$this->ca1Marks += 0.25;
+			$this->ca1Comments .= ";HTML validates, no errors.";
+		}
+		else
+		{
+			$this->ca1Comments .= ";HTML doesn't validate.";
+		}	
+	}
 	
 	// Apply visual check scores and comments
 	public function visualChecks($student)
 	{
-		/*	Max marks for concept map and storyboards are 0.2 each.
-		 *	Max marks for coding style is 0.1
-		 */
-		$this->ca1Marks += $student->getConceptMap() + 
-						   $student->getStoryboards() + 
-						   $student->getCodingStyle();
 		
-		if($student->getConceptMap() < 0.2)
+		if($student->getConceptMap() == 0.125)
 		{
-			$this->ca1Comments .= ";More work required on concept map, ideally drawn with software.";
+			$this->ca1Comments .= ";Must not be hand drawn. Please use software to draw.";
+			$this->ca1Marks += 0.125;
+		}
+		elseif($student->getConceptMap() == 0)
+		{
+			$this->ca1Comments .= ";More work required on concept map.";
 		}
 		else
 		{
 			$this->ca1Comments .= ";Concept map is suitable: Good.";
+			$this->ca1Marks += 0.25;
 		}
-		if($student->getStoryboards() < 0.2)
+
+		/* Storyboard 
+		 * no storyboard = 00
+		 * storyboard = 01
+		 * diagrams = 10
+		 */
+
+		if($student->getStoryboards() == "01" )
 		{
 			$this->ca1Comments .= ";More work required on storyboard. 
 			Check that your diagram matches your webpage.";
+			$this->ca1Marks += 0.25;
+			
+		}
+		elseif($student->getStoryboards() == "10")
+		{
+			$this->ca1Comments .= ";You should avoid using hand drawn diagrams.";
+			$this->ca1Marks += 0.25;
+		}
+		elseif($student->getStoryboards() == "00")
+		{
+			$this->ca1Comments .= ";No Storyboards provided.";
 		}
 		else
 		{
 			$this->ca1Comments .= ";Storyboard is suitable: Good.";
+			$this->ca1Marks += 0.5;
 		}
-		if($student->getCodingStyle() < 0.1)
+
+		/* Check Coding Style
+		 * coding style = 00
+		 * tags = 01
+		 * indent/tabs = 10
+		 * all happy = 111
+		 */
+		if($student->getCodingStyle() == "00")
 		{
-			$this->ca1Comments .= ";Coding style, indenting is not consistent. Please ensure your:
-			html, head, body tags are all on the left with no spaces in front of them. Break up long lines
+			$this->ca1Comments .= ";Coding style is not consistent. Break up long lines
 			so that you don't have to scroll across the screen.";
 		}
-		else
+		elseif($student->getCodingStyle() == "01")
+		{
+			$this->ca1Comments .= ";Please ensure your html, head, body tags are all on the left with no spaces in front of them. Coding style mostly ok.";
+			$this->ca1Marks += 0.25;
+		}
+		elseif($student->getCodingStyle() == "10")
+		{
+			$this->ca1Comments .= ";Indenting inconsistent, subservient code block should be indented.";
+			$this->ca1Marks += 0.25;
+		}
+		elseif($student->getCodingStyle() == "11")
 		{
 			$this->ca1Comments .= ";Coding Style is consistent: Good.";
+			$this->ca1Marks += 0.5;
 		}
-	}
+	} // End visualChecks()
 }
 
 ?>

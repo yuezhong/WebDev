@@ -76,6 +76,8 @@ class OutputResults
 
 	public function buildHTML($marks, $maxmarks, $comments, $CA)
 	{
+		$commentArr = explode(";", $comments);
+		$commentRows = count($commentArr);
 		$this->htmlOutput->append('<TR CLASS="headings">');
 		$this->htmlOutput->append("<TD>Assessment $CA</TD><TD>$maxmarks</TD><TD>$marks</TD><TD></TD></TR>");
 
@@ -83,7 +85,21 @@ class OutputResults
 		$comment = str_replace(";", '</TD></TR><TR><TD colspan="3"></TD><TD>', $comments);
 		$this->htmlOutput->append($comment);
 		$this->htmlOutput->append("</TD></TR>");	
-
+		
+		if(($commentRows !== 12) && ($CA !== '3a'))
+		{
+			for($i = 0; $i < (12 - $commentRows); $i++)
+			{
+				$this->htmlOutput->append('<TR><TD colspan="4">&nbsp</TD></TR>');
+			}
+		}
+		elseif($CA === '3a')
+		{
+			for($i = 0; $i < 2; $i++)
+			{
+				$this->htmlOutput->append('<TR><TD colspan="4">&nbsp</TD></TR>');
+			}
+		}
 	}
 	
 	public function closeHTML($total)

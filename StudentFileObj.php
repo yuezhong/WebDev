@@ -18,16 +18,7 @@ class StudentFileObj
 			
 		$this->filename = $filename;
 		$this->type = $type;
-		if(strpos($username, "_"))
-		{
-		 $uname = explode("_", $username);
-		 $this->username = $uname[0];
-
-		}
-		else
-		{
-		 $this->username = $username;
-		} 
+		$this->username = $username;
 		$this->subfolder = $subfolder;
 	}
 
@@ -121,7 +112,6 @@ class StudentFileObj
 		return $this->mime;
 	}
 	
-	// Set validation. If file has no errors, then Y.
 	public function setValidation($validated)
 	{
 		$this->validation = $validated;

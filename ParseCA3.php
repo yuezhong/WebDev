@@ -7,7 +7,8 @@
  * Image links
  * Navbar
  * Image formatting
- * Link to infotech
+ * Link to webserver
+ * Validation 
  * Each is worth 0.5
  */
  
@@ -46,7 +47,11 @@ class ParseCA3
 	 //Parse the HTML. The @ is used to suppress any parsing errors
 	 @$dom->loadHTML($html);
 	 
+	 // Build link to students public_html folder on web server.
 	 $username = $student->getusername();
+	 $this->dirpath .= "/$username/public_html/";
+
+	 echo "Dirpath, CA3 $this->dirpath\n";
 	
 	 $this->getExtLink($dom, $username);
 	 $this->getAltTags($dom);
@@ -64,8 +69,9 @@ class ParseCA3
 	public function getExtLink($dom, $studentUsername)
 	{
 	 $mark = array( "link_no_ext" =>0,
-					"link_ext" => 0);
+			"link_ext" => 0);
 	 $links = $dom->getElementsByTagName('a');
+	 $webserver = "http://172.19.96.239/~$studentUsername";
 
 	 // External Link - to infotech server
 	 foreach($links as $link)
@@ -74,12 +80,12 @@ class ParseCA3
 	  if($link->hasAttribute('target'))
 	  {
 		if(($link->getAttribute('target') === '_blank') &&
-		($link->getAttribute('href') === "http://infotech.scu.edu.au/~" . $studentUsername))
+		($link->getAttribute('href') === $webserver))
 		{
 			$mark["link_ext"]++;
 		}
 	  }
-	  elseif($link->getAttribute('href') === "http://infotech.scu.edu.au/~" . $studentUsername)
+	  elseif($link->getAttribute('href') === $webserver)
 	  {
 		  $mark["link_no_ext"]++;
 	  }
@@ -88,18 +94,18 @@ class ParseCA3
 	 if($mark["link_ext"] >= 1)
 	 {
 		$this->ca3Marks += 0.5;
-		$this->ca3Comments .= "External link to infotech server found: Good";
+		$this->ca3Comments .= "External link to Web server: 172.19.96.239 found: Good";
 	 }
 	 elseif($mark["link_no_ext"] >= 1)
 	 {
 		$this->ca3Marks += 0.25;
 		$this->ca3Comments .= 'Missing target="_blank" option for link' . 
-		 ": http://infotech.scu.edu.au/~$studentUsername";
+		 ": http://172.19.96.239/~$studentUsername";
 	 }
 	 elseif(($mark["link_no_ext"] === 0) && ($mark["link_ext"] === 0))
 	 {
 		$this->ca3Comments .= 'Missing External Link with target="_blank" option' . 
-		 ": http://infotech.scu.edu.au/~$studentUsername";
+		 ": http://172.19.96.239/~$studentUsername";
 	 }
 	} // End extLink
 	
@@ -143,7 +149,7 @@ class ParseCA3
 		
 		foreach ($images as $image)
 		{
-			$imageFile = $this->dirpath . $image->getAttribute('src');
+			$imageFile = $this->dirpath . str_replace('./', "", $image->getAttribute('src'));
 			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
 				//echo $imageFile . ":Matches\n";
@@ -190,75 +196,85 @@ class ParseCA3
 		
 		foreach($images as $image)
 		{
-			$imageFile = $this->dirpath . $image->getAttribute('src');
-			//echo "$imageFile\n";
+			$imageFile = $this->dirpath . str_replace('./', "", $image->getAttribute('src'));
+			echo "checking image: $imageFile\n";
 			if(array_key_exists($imageFile, $StudentFileObj["images"]))
 			{
-				$pathToImage = $StudentFileObj["images"][$imageFile]->getFilepath();
+				//echo $StudentFileObj["images"][$imageFile]->getImageWidth() . " : " . $StudentFileObj["images"][$imageFile]->getImageHeight() . "\n";
+				//echo $image->getAttribute('width') . " : " . $image->getAttribute('height') ."\n";
 				// Check Width
-				if ($StudentFileObj["images"][$pathToImage]->getImageWidth() !== $image->getAttribute('width')) {
+				if ($StudentFileObj["images"][$imageFile]->getImageWidth() == $image->getAttribute('width')) {
+					$imageCheck['opwidth']++;
+				}
+				else
+				{
 					$imageCheck['nopwidth']++;
 				}
+
+				// Check height
+				if ($StudentFileObj["images"][$imageFile]->getImageHeight() == $image->getAttribute('height')) {
+					$imageCheck['opheight']++;
+				}
 				else
 				{
-					$imageCheck['width']++;
-				}
-				// Check height
-				if ($StudentFileObj["images"][$pathToImage]->getImageHeight() !== $image->getAttribute('height')) {
 					$imageCheck['nopheight']++;
 				}
-				else
-				{
-					$imageCheck['height']++;
-				}
 				// Max image file size is 100kb
-				if ($StudentFileObj["images"][$pathToImage]->getFileSize() > 102400) 
+				if ($StudentFileObj["images"][$imageFile]->getFileSize() > 102400) 
 				{
-					echo "$pathToImage: Non optimal\n";
+					echo "$imageFile: Non optimal\n";
 					$imageCheck["nopsize"]++;
 				}
 				else
 				{
-					echo "$pathToImage: Optimal\n";
+					echo "$imageFile: Optimal\n";
 					$imageCheck["opsize"]++;
 				}
 			}
 		}
-		
+
+		//print_r($imageCheck);
+
+		if($imageCheck["nopwidth"] > $imageCheck["opwidth"])
+		{
+			//echo "Too many images with widths that doesn't match their image properties: " . $imageCheck["nopwidth"] . " : " . $imageCheck["opwidth"] . "\n";
+			$this->ca3Comments .= ";Too many Image width attributes not matching their image properties.";
+		}		
+		else
+		{
+			$this->ca3Comments .= ";Image width attributes matches their image properties.";
+		}
+
+		if($imageCheck["nopheight"] > $imageCheck["opheight"])
+		{
+			//echo "Too many Image height attributes not matching their image properties\n";
+			$this->ca3Comments .= ";Too many Image height attributes not matching their image properties.";
+		}
+		else
+		{
+			$this->ca3Comments .= ";Image height attributes matches their image properties.";
+		}
+
 		// Assuming that no more than 50% of images are > 100kb if thumbnails are used.
 		// Max half of the images are thumbnails and other half are full images.
-		$OpPercentage = ($imageCheck["nopsize"] / ($imageCheck["opsize"] + $imageCheck["nopsize"])) * 100;
+
+		$OpPercentage = ($imageCheck["opsize"] / ($imageCheck["nopsize"] + $imageCheck["opsize"])) * 100;
+
+		if($OpPercentage >= 50)
+		{
+			$this->ca3Comments .= ";Majority of Images are < 100kb, good.";
+		}
+		else
+		{
+			$this->ca3Comments .= ";Too many images > 100kb, not fully optimized, bad.";
+		}
 		
-		if((($imageCheck["nopwidth"] > 1) || ($imageCheck["nopheight"] > 1)) &&
-			(($imageCheck["opwidth"] === 0 ) && ($imageCheck["opheight"] === 0)) &&
-			($OpPercentage > 50))
+		if(($imageCheck["nopheight"] === 0) && ($imageCheck["nopwidth"] === 0) &&
+		   ($imageCheck["opwidth"] > 0) && ($imageCheck["opheight"] > 0) &&
+		   ($OpPercentage >= 50))
 		{
-			$this->ca3Comments .= ";Height and width values do not match height 
-			and width properties of images. Too many image file size is greater than 100kb.";
-		}
-		elseif((($imageCheck["nopwidth"] > 1) || ($imageCheck["nopheight"] > 1)) &&
-			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
-			(($OpPercentage > 50)))
-		{
-			$this->ca3Marks += 0.25;
-			$this->ca3Comments .= ";Some height or width values do not match height and 
-			width properties of images. Too many image file size is greater than 100kb.";
-		}
-		elseif((($imageCheck["nopwidth"] === 0) && ($imageCheck["nopheight"] === 0)) &&
-			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
-			($OpPercentage <= 50))
-		{
-			$this->ca3Marks += 0.25;
-			$this->ca3Comments .= ";Image height and width values matches image properties, however
-			too many image file size is greater than 100kb.";
-		}
-		elseif((($imageCheck["nopwidth"] === 0) && ($imageCheck["nopheight"] === 0)) &&
-			(($imageCheck["opwidth"] > 1) && ($imageCheck["opheight"] > 1)) &&
-			($OpPercentage <= 50))
-		{
+			//echo "Width and Height att are fine. File optimized, $OpPercentage \n";
 			$this->ca3Marks += 0.5;
-			$this->ca3Comments .= ";Image height and width values matches image properties,
-			the majority of image file sizes are less than 100kb: Good";
 		}
 		
 	} // End checkImageProp
@@ -451,13 +467,13 @@ class ParseCA3
 		elseif((count($webpages) > 0) && (count($broken) === 0) && $navbar_used === 0)
 		{
 			$this->ca3Marks += 0.25;
-			$this->ca3Comments .= ";No Navigation bar found but all links appears to work.";
+			$this->ca3Comments .= ";No Navigation bar found but all links appears to work. You need to setup a div for your navigation with a class or id called nav, or menu.";
 		}
 		elseif((count($webpages) > 0) && (count($broken) > 0) && $navbar_used === 0)
 		{
 			$this->ca3Marks += 0.25;
 			$this->ca3Comments .= ";No Navigation bar found and some broken links, 
-			check your path and spelling.";
+			check your path and spelling. You need to setup a div for your navigation with a class or id called nav, or menu.";
 		}
 		elseif((count($webpages) === 0) && (count($broken) > 0) && $navbar_used === 0)
 		{
@@ -494,16 +510,13 @@ class ParseCA3
 		{			
 			if(($sfhtml->getusername() === $username))
 			{
-				$dom = new DOMDocument;
-				$dom->load($sfhtml->getFilepath());
-				
-				if(!($dom->validate()))
+				if($sfhtml->getValidation() !== "y")
 				{
 					$non_validatedHtml++;
 				}
-			}	
-		}
-		
+			}
+		}		
+
 		if($non_validatedCss = 0 && $non_validatedHtml = 0)
 		{
 			$this->ca3Marks += 0.5;

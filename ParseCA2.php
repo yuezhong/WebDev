@@ -592,8 +592,8 @@ class ParseCA2
 	// Validate HTML
 	public function validateFiles($dom, $file, $username, $StudentFiles)
 	{
-		libxml_use_internal_errors(true);
-		$dom->load($file);
+		//libxml_use_internal_errors(true);
+		//$dom->load($file);
 		$filepath ="";
 		
 		// Look for styles_CA2.css file
@@ -615,17 +615,17 @@ class ParseCA2
 			$cssValidate = "n";
 		}			
 		
-		if($dom->validate() && ( $cssValidate === "y"))
+		if(($StudentFiles["html"][$file]->getValidation() === "y") && ( $cssValidate === "y"))
 		{
 			$this->ca2Marks += 0.25;
 			$this->ca2Comments .= ";HTML and CSS validates, no errors.";
 		}
-		elseif(($dom->validate() === TRUE) && ($cssValidate === "n"))
+		elseif(($StudentFiles["html"][$file]->getValidation() === "y") && ($cssValidate === "n"))
 		{
 			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML validates but CSS contain errors.";
 		}		
-		elseif(($dom->validate() === FALSE) && ($cssValidate === "y"))
+		elseif(($StudentFiles["html"][$file]->getValidation() === "n") && ($cssValidate === "y"))
 		{
 			$this->ca2Marks += 0.125;
 			$this->ca2Comments .= ";HTML does not validates but CSS validates.";
@@ -636,7 +636,7 @@ class ParseCA2
 		}
 
 		// Clear errors after we're done. We don't need to store this info.
-		libxml_clear_errors();
+		//libxml_clear_errors();
 	} // End validateFiles
 	
 	// Find text and background colours

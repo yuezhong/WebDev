@@ -14,7 +14,7 @@ class StudentObj
 	private $subMark;
 	private $subComment;
 
-	public function __construct($name, $id, $username, $ConceptMap, $Storyboards, $CodingStyle, $Upload)
+	public function __construct($name, $id, $username, $ConceptMap = 0, $Storyboards = 0, $CodingStyle = 0, $Upload = 0)
 	{
 		$this->name = $name;
 		$this->studentId = $id;

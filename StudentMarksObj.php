@@ -23,8 +23,6 @@ class StudentMarksObj
 					$this->maxmarks = 3;
 					break;
 					case 3:
-					$this->maxmarks = 8;
-					break;
 					case '3a':
 					case 5:
 					$this->maxmarks = 4;
@@ -45,8 +43,34 @@ class StudentMarksObj
 			return $this->assessment;
 		}
 		
-        public function getMaxMarks()
+		public function setMaxMarks($marks)
         {
+                $this->maxmarks = $marks;
+        }
+		
+        public function getMaxMarks($ca)
+        {
+			switch($ca)
+			{
+				case 1:
+				case 2:
+				case 4:
+				$this->maxmarks = 3;
+				break;
+				case 3:
+				case '3a':
+				case 5:
+				$this->maxmarks = 4;
+				break;
+				case 6:
+				$this->maxmarks = 2;
+				break;
+				case 7:
+				$this->maxmarks = 5;
+				break;
+			 default:
+				$this->maxmarks = 3;
+			}
             return $this->maxmarks;
         }
 
