@@ -62,8 +62,8 @@ class checkAssignments
 	public function recurseDir($filetypes, $username)
 	{
 	 try{
-                $rDirectory = new RecursiveDirectoryIterator($this->dirRoot . "/" . $username,
-                FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS);
+		$rDirectory = new RecursiveDirectoryIterator($this->dirRoot . "/" . $username,
+		FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS);
 
 		$dir = new RecursiveIteratorIterator($rDirectory);
 		$FileObj = array();
@@ -184,10 +184,23 @@ class checkAssignments
 			 }
 			} 
 		}
+		elseif($ca === "CA6")
+		{
+			foreach($StudentFiles["html"] as $file)
+			{
+			 if((strpos(strtolower($file->getFilename()), "resume") != FALSE) &&
+			    ($file->getusername() === $username))
+			 {
+			 	$index = $file->getFilepath();
+			 }
+			} 
+		}
 		else
 		{
 			$index = $this->findCAfile($ca, $StudentFiles, $username);	
 		}
+		
+
 		echo "Checking $index \n";		
 
 
@@ -271,7 +284,7 @@ class checkAssignments
 	
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3a", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks("3a"), $smarks->getComments(), "3a");
-			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(3a), $smarks->getComments(), "3a");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks("3a"), $smarks->getComments(), "3a");
 			echo "Added CA3a marks and comments.\n";
 
 			// give submission mark as freebie

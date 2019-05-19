@@ -23,57 +23,40 @@ class ParseCA6
 	{
 	 return $this->ca6Comments;
 	}
-
-	// Find Table Elements
-	public function findTableElements($dom, $element)
-	{
-		$tables = $dom->getElementsByTagName('table');
-		foreach($tables as $table)
-		{
-			$allElements = $dom->getElementsByTagName($element);
-			$total = count($allElements);
-		}
-		return $total;
-	} // End Find table Elements
 	
-	
-	// Count Table columns
-	function countCols($dom)
-	{
-		$colSize = 0;
-		$cols[] = 0;
-		$i = 0;
-		
-		foreach($dom->getElementsByTagName('table') as $table)
-		{
-			foreach($dom->getElementsByTagName('tr') as $row)
-			{
-				// Count each td on each tr and take the max value
-				foreach($dom->getElementsByTagName('td') as $col)
-				{
-					$colSize++;
-				}
-				
-				if($colSize > $cols[$i])
-				{
-					$col[$i] = $colSize;
-				}
-			}
-			
-			$i++;
-		}
-		
-		return $cols;
-	} // End countCols
-	
-	// Find any tables and provide a mark
+	// Find any tables and provide a mark if it is a minimum of 4x3
 	public function checkTables($dom)
 	{
-		$cols = $this->countCols($dom);
-		$rows = $this->findTableElements($dom, "tr");
-		print_r($cols);
+		$tables = $dom->getElementsByTagName('table');
+		$maxrows = 0;
+		$maxcols = 0;
 		
-		if(($cols >= 3) && ($rows >= 4))
+		foreach($tables as $table)
+		{
+			// Get Rows
+			$rows = $table->getElementsByTagName('tr');
+			if($rows->length > $maxrows)
+			{
+				$maxrows = $rows->length;
+			}
+			
+			// Get Cols
+			foreach($rows as $row)
+			{
+				$cols = $row->getElementsByTagName('td');
+				echo "Cols: " . $cols->length . "\n";
+				if($cols->length > $maxcols)
+				{
+					$maxcols = $cols->length;
+				}
+			}
+
+		}
+		
+		echo "Max table rows: $maxrows \n";
+		echo "Max table cols: $maxcols \n";
+		
+		if(($maxcols >= 3) && ($maxrows >= 4))
 		{
 			$this->ca6Comments = "Table found with minimum of 4 rows and 3 cols.";
 			$this->ca6Marks += 0.25;
@@ -88,22 +71,43 @@ class ParseCA6
 	// Find captions and headers
 	public function findCapHead($dom)
 	{
-		$captions = 0;
-		$headers = 0;
+		$capTotal = 0;
+		$headTotal = 0;
 		
-		$captions = $this->findTableElements($dom, "captions");
-		$headers = $this->findTableElements($dom, "thead");
+		$tables = $dom->getElementsByTagName('table');
 		
-		if(($captions > 0) && ($headers > 0))
+		foreach($tables as $table)
+		{
+			$captions = $table->getElementsByTagName('caption');
+			foreach($captions as $caption)
+			{
+				if($caption->nodeValue != '')
+				{
+					echo "Caption found: " . $caption->nodeValue . "\n";
+					$capTotal++;
+				}
+			}
+			$headers = $table->getElementsByTagName('thead');
+			foreach($headers as $header)
+			{
+				if($header->nodeValue != '')
+				{
+				 // echo "Headers: " . $header->nodeValue . "\n";
+				 $headTotal++;
+				}
+			}
+		}
+	
+		if(($capTotal > 0) && ($headTotal > 0))
 		{
 			$this->ca6Marks += 0.25;
 			$this->ca6Comments .= ";Captions and headers used - Good";
 		}
-		elseif(($captions === 0) && ($headers > 0))
+		elseif(($capTotal === 0) && ($headTotal > 0))
 		{
 			$this->ca6Comments .= ";Captions not used, but headers used.";
 		}
-		elseif(($captions > 0) && ($headers > 0))
+		elseif(($capTotal > 0) && ($headTotal === 0))
 		{
 			$this->ca6Comments .= ";Captions used but headers not used.";
 		}
@@ -111,6 +115,7 @@ class ParseCA6
 		{
 			$this->ca6Comments .= ";Captions and headers not used.";
 		}
+		
 	} // End findCapHead
 	
 	// Find border
@@ -126,22 +131,27 @@ class ParseCA6
 			{
 				$filepath = $sfcss->getFilepath();
 			}
-		}
+			
+			echo "Finding Border in: $filepath \n";
 		
-		// Set $cssfile to first value after ? if evalution is true, otherwise 2nd value after colon
-		$cssfile = ($filepath !== "" ? file_get_contents($filepath) : "");
-		preg_match_all("/(?<=table).*?(border:).*?(solid)/", $cssfile, $matches);
-		$border = preg_replace('/\s+/', '', $matches[0]);
-		$total += count($border);
+			// Set $cssfile to first value after ? if evalution is true, otherwise 2nd value after colon
+			$cssfile = ($filepath !== "" ? file_get_contents($filepath) : "");
+			
+			// Regex finds table, anything in between border and solid, over multiline (/s)
+			preg_match_all("/(?<=table).*?(border:).*?(solid)/s", $cssfile, $matches);
+			$border = preg_replace('/\s+/', '', $matches[0]);
+			print_r($border);
+			$total += count($border);
+		}
 		
 		if($total > 0)
 		{
-			$this->ca6Comments .= ";Soild Table border found.";
+			$this->ca6Comments .= ";CSS styled Soild Table border found.";
 			$this->ca6Marks += 0.25;
 		}
 		else
 		{
-			$this->ca6Comments .= ";A Solid Table border is required.";
+			$this->ca6Comments .= ";CSS styled Solid Table border is required. Table border html attribute is deprecated.";
 		}
 	} // End findBorder
 	
@@ -155,6 +165,10 @@ class ParseCA6
 			($sfcss->getusername() === $username))
 			{
 				$filepath = $sfcss->getFilepath();
+			}
+			else
+			{
+				$filepath = "";
 			}
 			
 			// Set $cssfile to first value after ? if evalution is true, otherwise 2nd value after colon
@@ -172,7 +186,7 @@ class ParseCA6
 		}
 		else
 		{
-			$this->ca6Comments .= 
+			$this->ca6Comments .= ";Please use nth-of-type for alternative shading in tables.";
 		}
 	}
 	
@@ -228,7 +242,7 @@ class ParseCA6
 	} // End validateFiles
 	
 	// Start all checks
-	public function start($file, $student, $StudentFileObj);
+	public function start($file, $student, $StudentFileObj)
 	{
 	 $html = file_get_contents($file);
 		
@@ -245,8 +259,8 @@ class ParseCA6
 	 $this->checkTables($dom);
 	 $this->findCapHead($dom);
 	 $this->findBorder($username, $StudentFileObj);
+	 $this->findPseudo($username, $StudentFileObj);
 	 $this->validateFiles($username, $StudentFileObj);
 	}
 }
-
 ?>
