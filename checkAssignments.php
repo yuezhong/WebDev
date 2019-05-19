@@ -6,7 +6,12 @@ require_once "ParseCA1.php";
 require_once "ParseCA2.php";
 require_once "ParseCA3.php";
 require_once "ParseCA3a.php";
+require_once "ParseCA4.php";
+require_once "ParseCA5.php";
+require_once "ParseCA6.php";
 require_once "OutputResults.php";
+require_once "OutputCSVResults.php";
+
 
 class checkAssignments
 {
@@ -75,7 +80,7 @@ class checkAssignments
 			break;
 			// Find all images, png, jpg, gif
 			case "images":
-				$filepaths = new RegexIterator($dir, '/^.+\.(gif|jpg|png)$/i');
+				$filepaths = new RegexIterator($dir, '/^.+\.(gif|jpg|jpeg|png)$/i');
 			break;
 		}
 		
@@ -209,7 +214,9 @@ class checkAssignments
 	{
 		foreach($StudentFiles["html"] as $files)
 		{
-			if(strpos($files->getFilename(), $cafile) && ($files->getusername() === $username))
+			if(strpos($files->getFilename(), $cafile) && 
+			(strpos($files->getFilename(), strtolower("index"))) && 
+			($files->getusername() === $username))
 			{
 			$cafile = $files->getFilepath();
 			echo "Found $cafile \n";
@@ -244,27 +251,33 @@ class checkAssignments
 			
 			$student->addRtotal($student->getSubMark());
 			$htmlOut = new OutputResults($students[$username], "1");
+			$csvOut = new OutputCSVResults($students[$username], "1");
 			$smarks = new StudentMarksObj("1", $students[$username]->getStudentId());
 			
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA1", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(1), $smarks->getComments(), "1");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(1), $smarks->getComments(), "1");
 			echo "Added CA1 marks and comments.\n";
 
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA2", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(2), $smarks->getComments(), "2");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(2), $smarks->getComments(), "2");
 			echo "Added CA2 marks and comments.\n";
 			
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(3), $smarks->getComments(), "3");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(3), $smarks->getComments(), "3");
 			echo "Added CA3 marks and comments.\n";
 	
 			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA3a", $student);
 			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks("3a"), $smarks->getComments(), "3a");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(3a), $smarks->getComments(), "3a");
 			echo "Added CA3a marks and comments.\n";
 
 			// give submission mark as freebie
 			$student->addRtotal(1);
 			$htmlOut->closeHTML($student->getRtotal());
+			$csvOut->closecsv($student->getRtotal());
 			echo "Feedback file generated for $username.\n";
 
 		}
@@ -272,5 +285,45 @@ class checkAssignments
 
 	} // End startAssignment1
 	
+	
+	// Check Assignment 2
+	public function startAssignment2($students, $StudentFiles)
+	{
+
+		foreach($students as $username=>$student)
+		{
+		 echo $username . "\n";
+
+			echo "Checking Student: " . $username ."\n";
+			
+			$student->addRtotal($student->getSubMark());
+			$htmlOut = new OutputResults($students[$username], "1");
+			$csvOut = new OutputCSVResults($students[$username], "1");
+			$smarks = new StudentMarksObj("2", $students[$username]->getStudentId());
+			
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA4", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(4), $smarks->getComments(), "4");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(4), $smarks->getComments(), "4");
+			echo "Added CA4 marks and comments.\n";
+
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA5", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(5), $smarks->getComments(), "5");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(5), $smarks->getComments(), "5");
+			echo "Added CA5 marks and comments.\n";
+			
+			$smarks = $this->checkAssessment($username, $StudentFiles, $smarks, "CA6", $student);
+			$htmlOut->buildHTML($smarks->getMarks(), $smarks->getMaxMarks(6), $smarks->getComments(), "6");
+			$csvOut->buildcsv($smarks->getMarks(), $smarks->getMaxMarks(6), $smarks->getComments(), "6");
+			echo "Added CA6 marks and comments.\n";
+	
+
+			// give submission mark as freebie
+			$student->addRtotal(1);
+			$htmlOut->closeHTML($student->getRtotal());
+			$csvOut->closecsv($student->getRtotal());
+			echo "Feedback file generated for $username.\n";
+
+		}
+	} // End startAssignment2
 }
 ?>

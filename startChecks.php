@@ -49,7 +49,7 @@ else
 			$startCheck->startAssignment1($students, $StudentFiles);
 			break;
 		case 2:
-			//$chAss->startAssignment2();
+			$startCheck->startAssignment2($students, $StudentFiles);
 			break;
 		case 3:
 			//$chAss->startAssignment3();
